@@ -1,5 +1,7 @@
 #ifndef RAND_H
 #define RAND_H
+#include <cstdlib>
+#include <cmath>
 
 // Generate a random number
 struct Ran
@@ -40,5 +42,12 @@ void shuffle(T *a, int n, Ran *myran) {
     a[j] = tmp;
   }
 }
+
+struct Normaldev : Ran {
+  double mu, sig;
+  Normaldev(double mmu, double ssig, unsigned long long i) : Ran(i), mu(mmu), sig(ssig) {}
+  double dev();	//	Return a normal deviate.
+};
+
 #endif
 

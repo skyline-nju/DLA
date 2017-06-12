@@ -21,6 +21,15 @@
     <ClCompile Include="comn.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="rand.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="run.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="grid.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cmdline.h">
@@ -30,6 +39,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="rand.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="particle.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="run.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="grid.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
