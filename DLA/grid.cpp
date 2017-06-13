@@ -36,6 +36,17 @@ void show_grid(int *grid, int n) {
   }
 }
 
+void show_grid(int *grid, int n, int m) {
+  int col_c = n % 2 == 0 ? n / 2 : (n - 1) / 2;
+  int row_c = col_c;
+  for (int row = row_c - m; row <= row_c + m; row++) {
+    for (int col = col_c - m; col <= col_c + m; col++) {
+      int idx = col + row * n;
+      cout << grid[idx] << " ";
+    }
+    cout << endl;
+  }
+}
 Grid::Grid(int n, int dmax): ncols(n), nrows(n), Dmax(dmax) {
   cluster = new int[n * n];
   cluster_size = 0;
@@ -67,6 +78,7 @@ Grid::~Grid() {
 void Grid::update(int coli, int rowi) {
   int idxi = coli + rowi * ncols;
   cluster_size++;
+  //cout << "[" << coli << ", " << rowi << "] = " << cluster_size << endl;
   cluster[idxi] = cluster_size;
 
   int k = 0;
@@ -88,5 +100,14 @@ void Grid::show() {
   show_grid(dis, ncols);
   cout << "cluster: " << endl;
   show_grid(cluster, ncols);
+}
+
+void Grid::show(int m) {
+  //cout << "vicinity: " << endl;
+  //show_grid(vicinity, 2 * Dmax + 1);
+  cout << "distance: " << endl;
+  show_grid(dis, ncols, m);
+  cout << "cluster: " << endl;
+  show_grid(cluster, ncols, m);
 }
 

@@ -8,7 +8,6 @@ struct Disk
   double get_rr(const Disk &d2) {
     return (x - d2.x) * (x - d2.x) + (y - d2.y) * (y - d2.y);
   }
-
   double x;
   double y;
 };

@@ -10,10 +10,9 @@ int main(int argc, char *argv[]) {
   vector<Disk> cluster;
   cluster.reserve(N);
   cluster.push_back(Disk(0, 0));
-  Grid grid(1000, 5);
-  Ran myran(1);
-  run(cluster, 4, &myran, grid);
-  //cal_fractal_dim(cluster);
+  Grid grid(20000, 20);
+  Ran myran(2);
+  run(cluster, 100000, &myran, grid);
+  cal_fractal_dim(cluster);
   output_xyz(cluster);
-  cout << grid.cluster_size << endl;
 }
