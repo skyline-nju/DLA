@@ -12,4 +12,15 @@ struct Disk
   double y;
 };
 
+struct Rod
+{
+  Rod() {}
+
+  double xc;
+  double yc;
+  double ux;
+  double uy;
+  static double a;
+  static double b;
+};
 #endif
