@@ -142,6 +142,7 @@
     <ClCompile Include="comn.cpp" />
     <ClCompile Include="grid.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="particle.cpp" />
     <ClCompile Include="rand.cpp" />
     <ClCompile Include="run.cpp" />
   </ItemGroup>

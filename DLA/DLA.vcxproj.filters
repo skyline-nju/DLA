@@ -30,6 +30,9 @@
     <ClCompile Include="grid.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="particle.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cmdline.h">
