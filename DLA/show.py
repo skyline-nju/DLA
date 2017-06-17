@@ -22,38 +22,52 @@ def show_disk(file):
             ax.add_patch(patches.Circle((x[i], y[i]), 1, aa=aa))
     else:
         for i in range(x.size):
-            ax.add_patch(patches.CirclePolygon(
+            ax.add_patch(
+                patches.CirclePolygon(
                     (x[i], y[i]), 1, resolution=10, aa=False))
     ax.axis("equal")
     plt.show()
     plt.close()
 
 
-def show_rect(file, a, b):
+def show_rect(file, a, b, ax=None, fill=True):
     with open(file) as f:
-        lines = f.readlines()[2:]
+        lines = f.readlines()
         x = np.zeros(len(lines))
         y = np.zeros_like(x)
         theta = np.zeros_like(x)
         for i, line in enumerate(lines):
             s = line.replace("\n", "").split("\t")
-            x[i] = float(s[1])
-            y[i] = float(s[2])
-            theta[i] = float(s[3])
-    ax = plt.subplot(111)
+            x[i] = float(s[0])
+            y[i] = float(s[1])
+            theta[i] = float(s[2])
+    if ax is None:
+        flag_show = True
+        ax = plt.subplot(111)
+    else:
+        flag_show = False
     for i in range(x.size):
-        ax.add_patch(patches.Rectangle((x[i], y[i]), b, a, angle=theta[i]))
+        ax.add_patch(
+            patches.Rectangle((x[i], y[i]), a, b, angle=theta[i], fill=fill))
     ax.axis("equal")
-    plt.show()
-    plt.close()
+    if flag_show:
+        plt.show()
+        plt.close()
 
 
 if __name__ == "__main__":
     ax = plt.subplot(111)
-    ax.add_patch(patches.Rectangle((0, 0), 1, 0.5, angle=45))
-    ax.add_patch(patches.Rectangle((0, 0), 3.5, 0.5, fill=False))
-    ax.add_patch(patches.Rectangle((2, 2), 1, 0.5))
-    ax.add_patch(patches.Circle((1, 1), 1))
-    ax.axis("equal")
+    show_rect("rect_200.dat", 14, 2, ax)
+    # show_rect("traj.dat", 8, 2, ax, fill=False)
     plt.show()
-    # show_disk("N1000.xyz")
+    plt.close()
+    # with open("traj.dat") as f:
+    #     lines = f.readlines()
+    #     x = np.zeros(len(lines))
+    #     y = np.zeros_like(x)
+    #     for i, line in enumerate(lines):
+    #         s = line.split("\t")
+    #         x[i] = float(s[0])
+    #         y[i] = float(s[1])
+    # plt.plot(x, y, ".")
+    # plt.show()

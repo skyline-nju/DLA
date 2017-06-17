@@ -3,42 +3,16 @@
 
 using namespace std;
 
-double sigma = 2;
-double rp = 1;
 double Lmin = 1;
 double Rmax = 0;
 double Rmax2 = 0;
-double R_release = Rmax + 5;
+double R_release = Rmax + 18;
 double Rkill = R_release * 5;
 
 void launch(Disk &p, Ran *myran) {
   double theta = myran->doub() * 2.0 * PI;
   p.x = R_release * cos(theta);
   p.y = R_release * sin(theta);
-  //cout << p.x << "\t" << p.y << "\t" << R_release << endl;
-}
-
-void collision(Disk &p0, const Disk & p1, double ux, double uy,
-               double l, double &l_hit, bool &flag) {
-  double dx = p0.x - p1.x;
-  double dy = p0.y - p1.y;
-  double B = 2 * (ux * dx + uy * dy);
-  double C = dx * dx + dy * dy - sigma * sigma;
-  double Delta = B * B - 4 * C;
-  if (Delta < 0) {
-    flag = false;
-    //cout << "Delta = " << Delta << endl;
-  } else {
-    double sqrt_Delta = sqrt(Delta);
-    l_hit = B + sqrt_Delta < 0 ? 
-            0.5 * (-B - sqrt_Delta) : 0.5 * (-B + sqrt_Delta);
-    if (l_hit > l || l_hit < 0) {
-      flag = false;
-    } else {
-      flag = true;
-    }
-    //cout << "l_hit = " << l_hit << "\t" << p0.x << "\t" << p0.y << endl;
-  }
 }
 
 bool one_step(Disk &p0, vector<Disk> &cluster, Ran *myran, Grid &grid) {
@@ -59,7 +33,7 @@ bool one_step(Disk &p0, vector<Disk> &cluster, Ran *myran, Grid &grid) {
         if (tag > 0) {
           bool flag;
           double l_hit;
-          collision(p0, cluster[tag - 1], ux, uy, Lmin, l_hit, flag);
+          p0.collide(cluster[tag - 1], ux, uy, Lmin, l_hit, flag);
           if (flag) {
             if (count_collision && l_hit_min > l_hit) {
               l_hit_min = l_hit;
@@ -72,7 +46,6 @@ bool one_step(Disk &p0, vector<Disk> &cluster, Ran *myran, Grid &grid) {
       }
     }
     if (count_collision > 0) {
-      //cout << "count = " << count_collision << endl;
       step_size = l_hit_min;
       flag_stick = true;
     } else {
@@ -83,10 +56,8 @@ bool one_step(Disk &p0, vector<Disk> &cluster, Ran *myran, Grid &grid) {
     step_size = d_wc - 4;
     flag_stick = false;
   }
-  //cout << d_wc << "\tstep size = " << step_size << "\t" << p0.get_rr(cluster[0]);
   p0.x += step_size * ux;
   p0.y += step_size * uy;
-  //cout << "\t" << p0.get_rr(cluster[0]) << endl;
   if (flag_stick) {
     cluster.push_back(p0);
     grid.update(p0.x, p0.y);
@@ -132,20 +103,67 @@ void cal_fractal_dim(const std::vector<Disk>& cluster) {
   }
 }
 
-void output(const vector<Disk> &cluster) {
-  char fname[100];
-  snprintf(fname, 100, "N%d.dat", cluster.size());
-  ofstream fout(fname);
-  for (int i = 0; i < cluster.size(); i++)
-    fout << cluster[i].x << "\t" << cluster[i].y << endl;
+void launch(Rect &p, Ran *myran) {
+  double theta = myran->doub() * 2.0 * PI;
+  double angle = myran->doub() * 360;
+  p = Rect(R_release * cos(theta), R_release * sin(theta), angle);
 }
 
-void output_xyz(const vector<Disk> &cluster) {
-  char fname[100];
-  snprintf(fname, 100, "N%d.xyz", cluster.size());
-  ofstream fout(fname);
-  fout << cluster.size() << endl;
-  fout << "type\tx\ty\n";
-  for (int i = 0; i < cluster.size(); i++)
-    fout << "X\t" << cluster[i].x << "\t" << cluster[i].y << endl;
+bool one_step(Rect & p, std::vector<Rect>& cluster, Ran * myran) {
+  bool flag_stick;
+  int idx0 = int(myran->doub() * 4);
+  Vec2<double> u;
+  p.get_mov_dir(idx0, u);
+  double l = Lmin;
+  int count = 0;
+  for (int i = 0; i < cluster.size(); i++) {
+    bool flag_collide = false;
+    double l_hit;
+    //p.collide(idx0, u, cluster[i], Lmin, l_hit, flag_collide);
+    if (idx0 == 0 || idx0 == 2)
+      p.collide1(idx0, u, cluster[i], Lmin, l_hit, flag_collide);
+    else
+      p.collide2(idx0, u, cluster[i], Lmin, l_hit, flag_collide);
+    if (flag_collide) {
+      if (l > l_hit) {
+        l = l_hit;
+      }
+      count++;
+    }
+  }
+  p.center += l * u;
+  p.cal_vertex();
+  if (count > 0) {
+    flag_stick = true;
+    cluster.push_back(p);
+  } else {
+    flag_stick = false;
+  }
+  return flag_stick;
+}
+
+void run(std::vector<Rect>& cluster, int nPar, Ran * myran) {
+  cluster.push_back(Rect(0, 0, 0));
+  vector<Rect> traj;
+  while (cluster.size() < nPar) {
+    cout << cluster.size() << endl;
+    Rect p0;
+    launch(p0, myran);
+    while (true) {
+      bool flag = one_step(p0, cluster, myran);
+      double r2 = p0.center.x * p0.center.x + p0.center.y * p0.center.y;
+      if (flag) {
+        if (r2 > Rmax2) {
+          Rmax2 = r2;
+          Rmax = sqrt(Rmax2);
+          R_release = Rmax + 18;
+          Rkill = R_release * 5;
+        }
+        break;
+      } else if (r2 > Rkill * Rkill) {
+        break;
+      }
+    }
+  }
+  Rect::output(traj, "traj.dat");
 }

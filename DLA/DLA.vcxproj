@@ -153,6 +153,7 @@
     <ClInclude Include="run.h" />
     <ClInclude Include="particle.h" />
     <ClInclude Include="rand.h" />
+    <ClInclude Include="vec.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

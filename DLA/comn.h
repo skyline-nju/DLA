@@ -44,5 +44,16 @@ void num_to_str(const T &num, std::string str) {
   ss >> str;
 }
 
+template <typename T>
+int get_idx_min(T *x, int n) {
+  int im = 0;
+  for (int i = 1; i < n; i++) {
+    if (x[i] < x[im]) {
+      im = i;
+    }
+  }
+  return im;
+}
+
 #endif
 
