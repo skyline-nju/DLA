@@ -61,6 +61,7 @@ struct Vec2
   double distance(const Vec2<T2> &a) const { return sqrt(square_distance(a)); }
   template <typename T2> 
   double square_distance(const Vec2<T2> &a) const;
+  double module() const { return sqrt(x * x + y * y); }
 
   friend std::ostream& operator <<(std::ostream &output, const Vec2<T> &a) {
     output << a.x << "\t" << a.y;

@@ -8,6 +8,7 @@ double Rect::a = 7;
 double Rect::b = 1;
 double Rect::La = 2 * Rect::a;
 double Rect::Lb = 2 * Rect::b;
+double Rect::Rab = sqrt(Rect::a * Rect::a + Rect::b * Rect::b);
 
 
 void Disk::collide(const Disk & p1, double ux, double uy,

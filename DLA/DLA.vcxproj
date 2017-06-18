@@ -144,12 +144,14 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="particle.cpp" />
     <ClCompile Include="rand.cpp" />
+    <ClCompile Include="rotate.cpp" />
     <ClCompile Include="run.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cmdline.h" />
     <ClInclude Include="comn.h" />
     <ClInclude Include="grid.h" />
+    <ClInclude Include="rotate.h" />
     <ClInclude Include="run.h" />
     <ClInclude Include="particle.h" />
     <ClInclude Include="rand.h" />

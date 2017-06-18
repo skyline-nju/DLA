@@ -42,6 +42,7 @@ struct Rect
   static double b;
   static double La;
   static double Lb;
+  static double Rab;
 };
 
 inline double Disk::get_rr(const Disk &d2) {
