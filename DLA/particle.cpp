@@ -145,6 +145,12 @@ void Rect::collideR(const Rect & rect, bool clockwise,
   get_min_angle(center, vertex, 4, rect.vertex, 4, clockwise, angle, flag);
 }
 
+void Rect::collideR(const vector<Vector2D>& my_point_set,
+                    const vector<Segment>& my_segment_set,
+                    const Rect & rect, bool CW, RotStatus & status) const {
+  get_min_angle(center, my_point_set, my_segment_set, rect.vertex, 4, CW, status);
+}
+
 void Rect::output(const vector<Rect> &rect, const char *filename) {
   ofstream fout(filename);
   for (int i = 0; i < rect.size(); i++) {
@@ -183,6 +189,31 @@ void Rect::get_mov_dir(int idx0, Vec2<double> &u) const {
       break;
     } default: {
       break;
+    }
+  }
+}
+
+void Rect::get_segment_set(bool CW, vector<Vector2D> &my_point_set,
+                           vector<Segment> &my_segment_set) {
+  my_point_set.reserve(4);
+  my_segment_set.reserve(4);
+  if (CW) {
+    for (int i = 0; i < 4; i++) {
+      int j = i == 0 ? 3 : i - 1;
+      Vector2D OM(vertex[i] - center, Rab);
+      double d = i == 0 || i == 2 ? b : a;
+      Vector2D ON((vertex[i] + vertex[j]) * 0.5 - center, d);
+      my_point_set.push_back(OM);
+      my_segment_set.push_back(Segment(OM, ON, false));
+    }
+  } else {
+    for (int i = 0; i < 4; i++) {
+      int j = i == 0 ? 3 : i - 1;
+      double d = i == 0 || i == 2 ? b : a;
+      Vector2D OM((vertex[i] + vertex[j]) * 0.5 - center, d);
+      Vector2D ON(vertex[j] - center, Rab);
+      my_point_set.push_back(ON);
+      my_segment_set.push_back(Segment(OM, ON, true));
     }
   }
 }

@@ -34,6 +34,11 @@ struct Rect
                 double l, double &l_hit, bool &flag_collide) const;
   void collideR(const Rect &rect, bool clockwise,
                 double &angle, bool &flag) const;
+  void collideR(const std::vector<Vector2D> &my_point_set,
+                const std::vector<Segment> &my_segment_set,
+                const Rect &rect, bool CW, RotStatus &status) const;
+  void get_segment_set(bool CW, std::vector<Vector2D> &my_point_set,
+                       std::vector<Segment> &my_segment_set);
   void rotate(double angle);
   void shift(const Vec2<double> &delta);
   static void output(const std::vector<Rect> &rect);
