@@ -2,6 +2,7 @@
 #define PARTICLE_H
 #include "vec.h"
 #include "comn.h"
+#include "rotate.h"
 
 struct Disk
 {
@@ -31,6 +32,10 @@ struct Rect
                 double l, double &l_hit, bool &flag_collide) const;
   void collide2(int idx0, const Vec2<double> &u, const Rect &rect,
                 double l, double &l_hit, bool &flag_collide) const;
+  void collideR(const Rect &rect, bool clockwise,
+                double &angle, bool &flag) const;
+  void rotate(double angle);
+  void shift(const Vec2<double> &delta);
   static void output(const std::vector<Rect> &rect);
   static void output(const std::vector<Rect> &rect, const char *f);
 
@@ -56,6 +61,16 @@ inline void Rect::cal_vertex() {
   vertex[1] = center + dR2;
   vertex[2] = center - dR1;
   vertex[3] = center - dR2;
+}
+
+inline void Rect::rotate(double angle) {
+  orient.rotate(angle);
+  cal_vertex();
+}
+
+inline void Rect::shift(const Vec2<double> &Delta) {
+  center += Delta;
+  cal_vertex();
 }
 
 void dis_point_edge(double &d, const double *X, const double *Y,

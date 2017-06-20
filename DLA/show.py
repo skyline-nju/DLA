@@ -30,7 +30,7 @@ def show_disk(file):
     plt.close()
 
 
-def show_rect(file, a, b, ax=None, fill=True):
+def show_rect(file, a, b, ax=None, fill=False):
     with open(file) as f:
         lines = f.readlines()
         x = np.zeros(len(lines))
@@ -57,7 +57,7 @@ def show_rect(file, a, b, ax=None, fill=True):
 
 if __name__ == "__main__":
     ax = plt.subplot(111)
-    show_rect("rect_500.dat", 14, 2, ax)
+    show_rect("rect_3.dat", 14, 2, ax)
     # show_rect("traj.dat", 8, 2, ax, fill=False)
     plt.show()
     plt.close()

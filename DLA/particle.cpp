@@ -140,6 +140,11 @@ void Rect::collide2(int idx0, const Vec2<double>& u, const Rect & rect,
   }
 }
 
+void Rect::collideR(const Rect & rect, bool clockwise, 
+                    double & angle, bool & flag) const {
+  get_min_angle(center, vertex, 4, rect.vertex, 4, clockwise, angle, flag);
+}
+
 void Rect::output(const vector<Rect> &rect, const char *filename) {
   ofstream fout(filename);
   for (int i = 0; i < rect.size(); i++) {

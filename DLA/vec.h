@@ -58,10 +58,14 @@ struct Vec2
   template <typename T2>
   double dot(const Vec2<T2> &a) const { return x * a.x + y * a.y; }
   template <typename T2>
+  double cross(const Vec2<T2> &a) const { return x * a.y - y * a.x; }
+  template <typename T2>
   double distance(const Vec2<T2> &a) const { return sqrt(square_distance(a)); }
   template <typename T2> 
   double square_distance(const Vec2<T2> &a) const;
+  double square() const { return x * x + y * y; }
   double module() const { return sqrt(x * x + y * y); }
+  void rotate(double theta);
 
   friend std::ostream& operator <<(std::ostream &output, const Vec2<T> &a) {
     output << a.x << "\t" << a.y;
@@ -71,9 +75,20 @@ struct Vec2
 
 template <class T>
 template <class T2>
-double Vec2<T>::square_distance(const Vec2<T2> &a) const {
+inline double Vec2<T>::square_distance(const Vec2<T2> &a) const {
   double dx = x - a.x;
   double dy = y - a.y;
   return dx * dx + dy * dy;
 }
+
+template <class T>
+inline void Vec2<T>::rotate(double theta) {
+  double cos_theta = cos(theta);
+  double sin_theta = sin(theta);
+  double u = x * cos_theta - y * sin_theta;
+  double v = x * sin_theta + y * cos_theta;
+  x = u;
+  y = v;
+}
+
 #endif

@@ -25,15 +25,28 @@ int main(int argc, char *argv[]) {
   //run(rect, N, &myran);
   //Rect::output(rect);
 
-  vector<Point> point_set;
-  vector<Segment> line_set;
+  Rect a(0, 0, 0);
+  vector<Rect> b;
+  b.push_back(a);
+  Vec2<double> Delta(4, 5);
+  a.shift(Delta);
+  a.rotate(PI / 10);
+  b.push_back(a);
+  Rect::output(b);
 
-  Vec2<double> O(0, 0);
-  Vec2<double> M(1, 1);
-  Vec2<double> N(1, -1);
-  get_increase_segment_set(O, M, N, point_set, line_set);
-  for (auto i : line_set) {
-    cout << i.p1.d << endl;
-    cout << i.p2.d << endl;
+  double angle;
+  bool flag = false;
+  b[0].collideR(b[1], true, angle, flag);
+  if (flag) {
+    Rect c = b[0];
+    c.rotate(angle);
+    //c.rotate(-acos(0.943373));
+    b.push_back(c);
+    Rect::output(b);
+    cout << angle / PI * 180 << endl;
+  } else {
+    cout << "no collision" << endl;
   }
+
+
 }                        
