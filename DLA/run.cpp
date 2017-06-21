@@ -9,6 +9,7 @@ double Rmax = 0;
 double Rmax2 = 0;
 double R_release = Rmax + 18;
 double Rkill = R_release * 5;
+double theta_m = PI / 36;
 
 void launch(Disk &p, Ran *myran) {
   double theta = myran->doub() * 2.0 * PI;
@@ -110,125 +111,60 @@ void launch(Rect &p, Ran *myran) {
   p = Rect(R_release * cos(theta), R_release * sin(theta), angle);
 }
 
-bool one_step(Rect & p, std::vector<Rect>& cluster, Ran * myran) {
-  bool flag_stick;
-  int idx0 = int(myran->doub() * 4);
-  Vec2<double> u;
-  p.get_mov_dir(idx0, u);
-  double l = Lmin;
-  int count = 0;
-  for (int i = 0; i < cluster.size(); i++) {
-    bool flag_collide = false;
-    double l_hit;
-    //p.collide(idx0, u, cluster[i], Lmin, l_hit, flag_collide);
-    if (idx0 == 0 || idx0 == 2)
-      p.collide1(idx0, u, cluster[i], Lmin, l_hit, flag_collide);
-    else
-      p.collide2(idx0, u, cluster[i], Lmin, l_hit, flag_collide);
-    if (flag_collide) {
-      if (l > l_hit) {
-        l = l_hit;
-      }
-      count++;
-    }
-  }
-  p.center += l * u;
-  p.cal_vertex();
-  if (count > 0) {
-    flag_stick = true;
-    cluster.push_back(p);
-  } else {
-    flag_stick = false;
-  }
-  return flag_stick;
-}
-
-bool one_step_rot(Rect & p, std::vector<Rect>& cluster, Ran * myran) {
-  bool flag_stick = false;
+bool one_step(Rect &p, vector<Rect> &cluster, Ran *myran) {
   int idx0 = int(myran->doub() * 6);
-  if (idx0 < 4) {
-    Vec2<double> u;
-    p.get_mov_dir(idx0, u);
-    int count = 0;
-    double l = Lmin;
-    for (int i = 0; i < cluster.size(); i++) {
-      bool flag_collide = false;
-      double l_hit;
-      //p.collide(idx0, u, cluster[i], Lmin, l_hit, flag_collide);
-      if (idx0 == 0 || idx0 == 2)
-        p.collide1(idx0, u, cluster[i], Lmin, l_hit, flag_collide);
-      else
-        p.collide2(idx0, u, cluster[i], Lmin, l_hit, flag_collide);
-      if (flag_collide) {
-        if (l > l_hit) {
-          l = l_hit;
-        }
-        count++;
-      }
-    }
-    p.center += l * u;
-    p.cal_vertex();
-    flag_stick = count > 0 ? true : false;
-  } else {
-    bool CW = idx0 == 4 ? true : false;
-    double theta_max = PI / 36;
-    double angle;
-    RotStatus status(theta_max);
-    vector<Vector2D> pnt_set;
-    vector<Segment> smt_set;
-    p.get_segment_set(CW, pnt_set, smt_set);
-    for (int i = 0; i < cluster.size(); i++) {
-      p.collideR(pnt_set, smt_set, cluster[i], CW, status);
-      //p.collideR(cluster[i], CW, angle, status.flag);
-    }
-    if (status.flag) {
-      //if (status.cos_angle >= 1) {
-      //  angle = 0;
-      //  flag_stick = false;
-      //} else {
-      //  angle = acos(status.cos_angle);   
-      //  if (CW) angle = -angle;
-      //  flag_stick = true;
-      //  p.rotate(angle);
-      //  cout << "rot contact " << "\t" << angle << endl;
-      //}
-      flag_stick = false;
-    } else {
-      angle = theta_max;
-      if (CW) angle = -angle;
-      flag_stick = false;
-      p.rotate(angle);
-    }
+  bool collided = false;
+  switch (idx0) {
+  case 0: {
+    p.move_longitudinal(idx0, cluster, Lmin, collided);
+    break;
   }
-  if (flag_stick) {
-    cluster.push_back(p);
+  case 1: {
+    p.move_transverse(idx0, cluster, Lmin, collided);
+    break;
   }
-  return flag_stick;
+  case 2: {
+    p.move_longitudinal(idx0, cluster, Lmin, collided);
+    break;
+  }
+  case 3: {
+    p.move_transverse(idx0, cluster, Lmin, collided);
+    break;
+  }
+  case 4: {
+    p.rotate(cluster, theta_m, true, collided);
+    break;
+  }
+  case 5: {
+    p.rotate(cluster, theta_m, false, collided);
+  }
+  default:
+    break;
+  }
+  return collided;
 }
-
 
 void run(std::vector<Rect>& cluster, int nPar, Ran * myran) {
   cluster.push_back(Rect(0, 0, 0));
-  vector<Rect> traj;
   while (cluster.size() < nPar) {
-    cout << cluster.size() << endl;
     Rect p0;
     launch(p0, myran);
     while (true) {
-      bool flag = one_step_rot(p0, cluster, myran);
-      double r2 = p0.center.x * p0.center.x + p0.center.y * p0.center.y;
+      bool flag = one_step(p0, cluster, myran);
       if (flag) {
-        if (r2 > Rmax2) {
-          Rmax2 = r2;
+        cluster.push_back(p0);
+        cout << cluster.size() << endl;
+        double rr = p0.center.square();
+        if (rr > Rmax2) {
+          Rmax2 = rr;
           Rmax = sqrt(Rmax2);
           R_release = Rmax + 18;
           Rkill = R_release * 5;
         }
         break;
-      } else if (r2 > Rkill * Rkill) {
+      } else if (p0.center.square() > Rkill * Rkill) {
         break;
       }
     }
   }
-  Rect::output(traj, "traj.dat");
 }

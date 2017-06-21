@@ -62,8 +62,8 @@ Rect::Rect(double xc, double yc, double ux, double uy):
   cal_vertex();
 }
 
-void Rect::collide1(int idx0, const Vec2<double>& u, const Rect & rect,
-                    double l, double &l_hit, bool &flag_collide) const {
+void Rect::collide_longitudinal(int idx0, const Vec2<double>& u, const Rect & rect,
+                                double l, double &l_hit, bool &flag_collide) const {
   double LY = idx0 == 0 || idx0 == 2 ? Lb : La;
   double X[4];
   bool flag_all_negative = true;
@@ -102,8 +102,8 @@ void Rect::collide1(int idx0, const Vec2<double>& u, const Rect & rect,
   }
 }
 
-void Rect::collide2(int idx0, const Vec2<double>& u, const Rect & rect,
-                    double l, double &l_hit, bool &flag_collide) const {
+void Rect::collide_transverse(int idx0, const Vec2<double>& u, const Rect & rect,
+                              double l, double &l_hit, bool &flag_collide) const {
   double LY = La;
   double X[4];
   double Y[4];
@@ -140,15 +140,65 @@ void Rect::collide2(int idx0, const Vec2<double>& u, const Rect & rect,
   }
 }
 
-void Rect::collideR(const Rect & rect, bool clockwise, 
-                    double & angle, bool & flag) const {
-  get_min_angle(center, vertex, 4, rect.vertex, 4, clockwise, angle, flag);
+void Rect::move_longitudinal(int idx0, const vector<Rect>& cluster,
+                             double lm, bool & collided) {
+  collided = false;
+  double l = lm;
+  Vec2<double> u;
+  get_mov_dir(idx0, u);
+  for (int i = 0, size = cluster.size(); i < size; i++) {
+    bool flag = false;
+    double l_hit;
+    collide_longitudinal(idx0, u, cluster[i], lm, l_hit, flag);
+    if (flag) {
+      collided = true;
+      if (l > l_hit) l = l_hit;
+    }
+  }
+  center += u * l;
+  cal_vertex();
 }
 
-void Rect::collideR(const vector<Vector2D>& my_point_set,
-                    const vector<Segment>& my_segment_set,
-                    const Rect & rect, bool CW, RotStatus & status) const {
-  get_min_angle(center, my_point_set, my_segment_set, rect.vertex, 4, CW, status);
+void Rect::move_transverse(int idx0, const vector<Rect>& cluster,
+                           double lm, bool & collided) {
+  collided = false;
+  double l = lm;
+  Vec2<double> u;
+  get_mov_dir(idx0, u);
+  for (int i = 0, size = cluster.size(); i < size; i++) {
+    bool flag = false;
+    double l_hit;
+    collide_transverse(idx0, u, cluster[i], lm, l_hit, flag);
+    if (flag) {
+      collided = true;
+      if (l > l_hit) l = l_hit;
+    }
+  }
+  center += u * l;
+  cal_vertex();
+}
+
+void Rect::rotate(const std::vector<Rect>& cluster, double theta_m,
+                  bool CW, bool & collided) {
+  RotStatus status(theta_m);
+  vector<Vector2D> point_set;
+  vector<Segment> segment_set;
+  get_segment_set(CW, point_set, segment_set);
+  for (int i = 0, size = cluster.size(); i < size; i++) {
+    get_min_angle(center, point_set, segment_set,
+                  cluster[i].vertex, 4, CW, status);
+  }
+  double theta;
+  if (status.flag) {
+    collided = true;
+    theta = acos(status.cos_angle);
+  } else {
+    collided = false;
+    theta = theta_m;
+  }
+  if (CW) theta = -theta;
+  orient.rotate(theta);
+  cal_vertex();
 }
 
 void Rect::output(const vector<Rect> &rect, const char *filename) {
@@ -171,30 +221,29 @@ void Rect::output(const vector<Rect> &rect) {
 
 void Rect::get_mov_dir(int idx0, Vec2<double> &u) const {
   switch (idx0) {
-    case 0: {
-      u.x = orient.x;
-      u.y = orient.y;
-      break;
-    } case 1: {
-      u.x = -orient.y;
-      u.y = orient.x;
-      break;
-    } case 2: {
-      u.x = -orient.x;
-      u.y = -orient.y;
-      break;
-    } case 3: {
-      u.x = orient.y;
-      u.y = -orient.x;
-      break;
-    } default: {
-      break;
-    }
+  case 0:
+    u.x = orient.x;
+    u.y = orient.y;
+    break;
+  case 1:
+    u.x = -orient.y;
+    u.y = orient.x;
+    break;
+  case 2:
+    u.x = -orient.x;
+    u.y = -orient.y;
+    break;
+  case 3:
+    u.x = orient.y;
+    u.y = -orient.x;
+    break; 
+  default:
+    break;
   }
 }
 
 void Rect::get_segment_set(bool CW, vector<Vector2D> &my_point_set,
-                           vector<Segment> &my_segment_set) {
+                           vector<Segment> &my_segment_set) const {
   my_point_set.reserve(4);
   my_segment_set.reserve(4);
   if (CW) {

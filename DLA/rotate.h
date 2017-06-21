@@ -59,25 +59,8 @@ void get_increase_segment_set(const Vec2<double> &O,
                               std::vector<Vector2D> &point_set,
                               std::vector<Segment> &line_set);
 
-
-bool rotate_contact(const Vector2D &P, const Segment &MN,
-                    bool clockwise, double &cos_angle);
-
 void rotate_contact(const Vector2D &OP, const Segment &MN,
                     bool CW, RotStatus &status);
-
-void check(const std::vector<Vector2D> &point_set,
-           const std::vector<Segment> &segment_set, bool clockwise,
-           bool &flag, double &max_cos);
-
-void check(const std::vector<Vector2D> &point_set,
-           const std::vector<Segment> &segment_set,
-           bool clockwise, RotStatus & status);
-
-void get_min_angle(const Vec2<double> &O,
-                   const Vec2<double> *A, int nA,
-                   const Vec2<double> *B, int nB,
-                   bool clockwise, double &min_angle, bool &flag);
 
 void get_min_angle(const Vec2<double> &O,
                    const std::vector<Vector2D> &point_set_A,

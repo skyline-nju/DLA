@@ -57,8 +57,8 @@ def show_rect(file, a, b, ax=None, fill=False):
 
 if __name__ == "__main__":
     ax = plt.subplot(111)
-    show_rect("rect_10.dat", 14, 2, ax)
-    # show_rect("traj.dat", 8, 2, ax, fill=False)
+    show_rect("rect_30.dat", 14, 2, ax)
+    # show_rect("traj.dat", 14, 2, ax, fill=False)
     plt.show()
     plt.close()
     # with open("traj.dat") as f:

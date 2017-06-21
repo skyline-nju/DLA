@@ -28,18 +28,18 @@ struct Rect
   Rect(double xc, double yc, double ux, double uy);
   void cal_vertex();
   void get_mov_dir(int idx0, Vec2<double> &u) const;
-  void collide1(int idx0, const Vec2<double> &u, const Rect &rect,
-                double l, double &l_hit, bool &flag_collide) const;
-  void collide2(int idx0, const Vec2<double> &u, const Rect &rect,
-                double l, double &l_hit, bool &flag_collide) const;
-  void collideR(const Rect &rect, bool clockwise,
-                double &angle, bool &flag) const;
-  void collideR(const std::vector<Vector2D> &my_point_set,
-                const std::vector<Segment> &my_segment_set,
-                const Rect &rect, bool CW, RotStatus &status) const;
+  void collide_longitudinal(int idx0, const Vec2<double> &u, const Rect &rect,
+                            double l, double &l_hit, bool &flag_collide) const;
+  void collide_transverse(int idx0, const Vec2<double> &u, const Rect &rect,
+                          double l, double &l_hit, bool &flag_collide) const;
+  void move_longitudinal(int idx0, const std::vector<Rect> &cluster,
+                         double lm, bool &collided);
+  void move_transverse(int idx0, const std::vector<Rect> &cluster,
+                       double lm, bool &collided);
+  void rotate(const std::vector<Rect> &cluster, double theta_m,
+                bool clockwise, bool &collided);
   void get_segment_set(bool CW, std::vector<Vector2D> &my_point_set,
-                       std::vector<Segment> &my_segment_set);
-  void rotate(double angle);
+                       std::vector<Segment> &my_segment_set) const;
   void shift(const Vec2<double> &delta);
   static void output(const std::vector<Rect> &rect);
   static void output(const std::vector<Rect> &rect, const char *f);
@@ -66,11 +66,6 @@ inline void Rect::cal_vertex() {
   vertex[1] = center + dR2;
   vertex[2] = center - dR1;
   vertex[3] = center - dR2;
-}
-
-inline void Rect::rotate(double angle) {
-  orient.rotate(angle);
-  cal_vertex();
 }
 
 inline void Rect::shift(const Vec2<double> &Delta) {

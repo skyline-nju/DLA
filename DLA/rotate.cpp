@@ -50,30 +50,25 @@ void get_increase_segment_set(const Vec2<double>& O,
   }
 }
 
-bool rotate_contact(const Vector2D & OP, const Segment & MN, bool CW,
-                    double & cos_angle) {
-  bool flag = false;
-  if (MN.intersect(OP)) {
-    Vec2<double> vMN = MN.end.vec - MN.beg.vec;
-    double rr = OP.magnitude * OP.magnitude;
-    double a = vMN.square();
-    double b = 2 * MN.beg.vec.dot(vMN);
-    double c = MN.beg.magnitude * MN.beg.magnitude - rr;
-    double Delta2 = b * b - 4 * a * c;
-    if (Delta2 >= 0) {
-      double Delta = sqrt(Delta2);
-      double t = (-b + Delta) / (2 * a);
-      if (t > 1)
-        t = (-b - Delta) / (2 * a);
-      Vec2<double> vOQ = MN.beg.vec + t * vMN;
-      double cross = OP.vec.cross(vOQ);
-      if ((CW && cross < 0) || (!CW && cross > 0)) {
-        flag = true;
-        cos_angle = vOQ.dot(OP.vec) / rr;
-      }
+void get_segment_set(const Vec2<double> &O, const Vec2<double> *vertex, int n,
+                     vector<Vector2D> &point_set,
+                     vector<Segment> &line_set, bool CW) {
+  point_set.reserve(2 * n);
+  line_set.reserve(n);
+  if (CW) {
+    for (int i = 0; i < n; i++) {
+      int j = i - 1;
+      if (j < 0) j += n;
+      get_increase_segment_set(O, vertex[i], vertex[j], point_set, line_set);
+    }
+  } else {
+    for (int i = 0; i < n; i++) {
+      int j = i - 1;
+      if (j < 0) j += n;
+      get_decrease_segment_set(O, vertex[i], vertex[j], point_set, line_set);
     }
   }
-  return flag;
+
 }
 
 void rotate_contact(const Vector2D &OP, const Segment &MN, bool CW,
@@ -92,101 +87,23 @@ void rotate_contact(const Vector2D &OP, const Segment &MN, bool CW,
     double cross_product = OP.vec.cross(vOQ);
     if ((CW && cross_product < 0) || (!CW && cross_product > 0)) {
       double cos_angle = vOQ.dot(OP.vec) / rr;
-      if (cos_angle > status.cos_angle) {
+      if (cos_angle >= status.cos_angle) {
         status.cos_angle = cos_angle;
-        status.contact_point = vOQ;
+        //status.sin_angle = cross_product / rr;
+        //status.contact_point = vOQ;
         status.flag = true;
       }
     }
   }
 }
 
-void check(const vector<Vector2D>& point_set,
-           const vector<Segment>& segment_set, bool clockwise,
-           bool &flag, double &max_cos) {
-  flag = false;
-  for (int i = 0, nS = segment_set.size(); i < nS; i++) {
-    for (int j = 0, nP = point_set.size(); j < nP; j++) {
-      double cos_angle;
-      if (rotate_contact(point_set[j], segment_set[i],
-                         clockwise, cos_angle)) {
-        if (flag && max_cos < cos_angle) {
-          max_cos = cos_angle;
-        } else if (!flag) {
-          flag = true;
-          max_cos = cos_angle;
-        }
-      } 
+void for_each_pair(const vector<Vector2D>& point_set,
+                   const vector<Segment>& segment_set,
+                   bool clockwise, RotStatus & status) {
+  for (auto line = segment_set.cbegin(); line != segment_set.cend(); ++line) {
+    for (auto pnt = point_set.cbegin(); pnt != point_set.cend(); ++pnt) {
+      rotate_contact(*pnt, *line, clockwise, status);
     }
-  }
-}
-
-void check(const vector<Vector2D>& point_set,
-           const vector<Segment>& segment_set,
-           bool clockwise, RotStatus & status) {
-  for (int i = 0, nS = segment_set.size(); i < nS; i++) {
-    for (int j = 0, nP = point_set.size(); j < nP; j++) {
-      rotate_contact(point_set[i], segment_set[j], clockwise, status);
-    }
-  }
-}
-
-void get_min_angle(const Vec2<double>& O,
-                   const Vec2<double>* A, int nA,
-                   const Vec2<double>* B, int nB,
-                   bool clockwise, double &min_angle, bool &flag) {
-  vector<Vector2D> point_set_A;
-  vector<Vector2D> point_set_B;
-  vector<Segment> line_set_A;
-  vector<Segment> line_set_B;
-  if (clockwise) {
-    for (int i = 0; i < nA; i++) {
-      int j = i - 1;
-      if (j < 0) j += nA;
-      get_decrease_segment_set(O, A[i], A[j], point_set_A, line_set_A);
-    }
-    for (int i = 0; i < nB; i++) {
-      int j = i - 1;
-      if (j < 0) j += nB;
-      get_increase_segment_set(O, B[i], B[j], point_set_B, line_set_B);
-    }
-  } else {
-    for (int i = 0; i < nA; i++) {
-      int j = i - 1;
-      if (j < 0) j += nA;
-      get_increase_segment_set(O, A[i], A[j], point_set_A, line_set_A);
-    }
-    for (int i = 0; i < nB; i++) {
-      int j = i - 1;
-      if (j < 0) j += nB;
-      get_decrease_segment_set(O, B[i], B[j], point_set_B, line_set_B);
-    }
-  }
-  bool flag_A;
-  double max_cos_A;
-  bool flag_B;
-  double max_cos_B;
-  check(point_set_A, line_set_B, clockwise, flag_A, max_cos_A);
-  check(point_set_B, line_set_A, !clockwise, flag_B, max_cos_B);
-  if (!flag_A && !flag_B) {
-    flag = false;
-  } else if (flag_A && flag_B) {
-    flag = true;
-    if (max_cos_A > max_cos_B) {
-      min_angle = acos(max_cos_A);
-    } else {
-      min_angle = acos(max_cos_B);
-    }
-  } else if (flag_A) {
-    flag = true;
-    min_angle = acos(max_cos_A);
-  } else {
-    flag = true;
-    min_angle = acos(max_cos_B);
-  }
-  if (flag) {
-    if (clockwise)
-      min_angle = -min_angle;
   }
 }
 
@@ -196,22 +113,8 @@ void get_min_angle(const Vec2<double> &O, const vector<Vector2D> &point_set_A,
                    RotStatus &status) {
   vector<Vector2D> point_set_B;
   vector<Segment> line_set_B;
-  point_set_B.reserve(2 * nB);
-  line_set_B.reserve(nB);
-  if (CW) {
-    for (int i = 0; i < nB; i++) {
-      int j = i - 1;
-      if (j < 0) j += nB;
-      get_increase_segment_set(O, B[i], B[j], point_set_B, line_set_B);
-    }
-  } else {
-    for (int i = 0; i < nB; i++) {
-      int j = i - 1;
-      if (j < 0) j += nB;
-      get_decrease_segment_set(O, B[i], B[j], point_set_B, line_set_B);
-    }
-  }
-  check(point_set_A, line_set_B, CW, status);
-  check(point_set_B, line_set_A, !CW, status);
+  get_segment_set(O, B, nB, point_set_B, line_set_B, CW);
+  for_each_pair(point_set_A, line_set_B, CW, status);
+  for_each_pair(point_set_B, line_set_A, !CW, status);
 }
 
