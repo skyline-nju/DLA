@@ -35,15 +35,15 @@ int main(int argc, char *argv[]) {
   //cal_fractal_dim(cluster);
   //output_xyz(cluster);
 
-  int N = 50;
+  clock_t beg = clock();
+  int N = 10;
   vector<Rect> rect;
   rect.reserve(N);
-  Ran myran(18);
-  Cell cell(1500, ceil(2 * Rect::Rab) + 1);
-  run(rect, N, cell, &myran);
+  Ran myran(81);
+  //Cell cell(150, ceil(2 * Rect::Rab) + 1);
+  run(rect, N, &myran);
   Rect::output(rect);
-  cout << cell.get_row(0) << endl;
-
+  cout << "Elapsed time = " << (clock() - beg) / CLOCKS_PER_SEC << endl;
   //Foo A(2);
   //A.add(1);
   //f = &Foo::add;

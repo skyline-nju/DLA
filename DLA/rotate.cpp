@@ -90,7 +90,7 @@ void rotate_contact(const Vector2D &OP, const Segment &MN, bool CW,
       if (cos_angle >= status.cos_angle) {
         status.cos_angle = cos_angle;
         //status.sin_angle = cross_product / rr;
-        //status.contact_point = vOQ;
+        status.contact_point = vOQ;
         status.flag = true;
       }
     }

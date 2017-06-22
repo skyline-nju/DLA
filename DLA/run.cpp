@@ -115,7 +115,7 @@ bool one_step(Rect &p, vector<Rect> &cluster, Ran *myran) {
   int idx0 = int(myran->doub() * 6);
   bool collided = false;
   if (idx0 < 4) {
-    p.translate(cluster, Lmin, idx0, collided);
+    p.translate2(cluster, Lmin, idx0, collided);
   } else if (idx0 == 4) {
     p.rotate(cluster, theta_m, true, collided);
   } else {
@@ -146,7 +146,7 @@ void run(vector<Rect>& cluster, int nPar, Ran * myran) {
       bool flag = one_step(p0, cluster, myran);
       if (flag) {
         cluster.push_back(p0);
-        cout << cluster.size() << endl;
+        //cout << cluster.size() << endl;
         double rr = p0.center.square();
         if (rr > Rmax2) {
           Rmax2 = rr;
@@ -173,7 +173,7 @@ void run(std::vector<Rect>& cluster, int nPar, Cell & cell, Ran * myran) {
       if (one_step(p0, cluster, cell, myran)) {
         cell.update(p0.center.x, p0.center.y);
         cluster.push_back(p0);
-        cout << "n = " << cluster.size() << endl;
+        //cout << "n = " << cluster.size() << endl;
         double rr = p0.center.square();
         if (rr > Rmax2) {
           Rmax2 = rr;

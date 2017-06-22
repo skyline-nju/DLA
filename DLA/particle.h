@@ -22,6 +22,15 @@ struct Disk
   static double rp;
 };
 
+struct TranStatus
+{
+  TranStatus(double l) : l_hit(l), flag(false) {}
+  double l_hit;
+  bool flag;
+  int neighbor_tag;
+  Vec2<double> contact_point;
+};
+
 struct Rect
 {
   Rect() {}
@@ -31,10 +40,16 @@ struct Rect
   void get_mov_dir(int idx0, Vec2<double> &u) const;
   void collide_longitudinal(int idx0, const Vec2<double> &u, const Rect &rect,
                             double l, double &l_hit, bool &flag_collide) const;
+  void collide_longitudinal(int idx0, const Vec2<double> &u, const Rect &rect,
+                            TranStatus &status) const;
   void collide_transverse(int idx0, const Vec2<double> &u, const Rect &rect,
                           double l, double &l_hit, bool &flag_collide) const;
+  void collide_transverse(int idx0, const Vec2<double> &u, const Rect &rect,
+                          TranStatus &status) const;
   void translate(const std::vector<Rect> &cluster, double lm,
                  int idx0, bool &collided);
+  void translate2(const std::vector<Rect> &cluster, double lm,
+                  int idx0, bool &collided);
   void translate(const std::vector<Rect> &cluster, const Cell &cell,
                  double lm, int idx0, bool &collided);
   void rotate(const std::vector<Rect> &cluster, double theta_m,
@@ -80,5 +95,8 @@ inline void Rect::shift(const Vec2<double> &Delta) {
 }
 
 void dis_point_edge(double &d, const double *X, const double *Y,
+                    int size, int im, double LY);
+
+void dis_point_edge(double &d, int &delta_n, const double *X, const double *Y,
                     int size, int im, double LY);
 #endif

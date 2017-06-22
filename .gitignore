@@ -11,6 +11,7 @@
 *.userprefs
 *.dat
 *.xyz
+*.txt
 
 # Build results
 [Dd]ebug/

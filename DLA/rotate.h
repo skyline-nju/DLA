@@ -47,6 +47,7 @@ struct RotStatus
   bool flag;
 };
 
+
 void get_decrease_segment_set(const Vec2<double> &O,
                               const Vec2<double> &M,
                               const Vec2<double> &N,

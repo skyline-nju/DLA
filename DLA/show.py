@@ -57,8 +57,18 @@ def show_rect(file, a, b, ax=None, fill=False):
 
 if __name__ == "__main__":
     ax = plt.subplot(111)
-    show_rect("rect_50.dat", 14, 2, ax)
+    show_rect("rect_10.dat", 14, 2, ax)
     # show_rect("traj.dat", 14, 2, ax, fill=False)
+    x = []
+    y = []
+    with open("vertex.txt") as f:
+        lines = f.readlines()
+        for line in lines:
+            s = line.replace("\n", "").split("\t")
+            x.append(float(s[0]))
+            y.append(float(s[1]))
+    ax.plot(x, y, "o")
+
     plt.show()
     plt.close()
     # with open("traj.dat") as f:

@@ -46,6 +46,8 @@ public:
   bool is_isolate(double x, double y) const;
   void update(int coli, int rowi);
   void update(double x, double y);
+  template <class T, class UnaryFunc>
+  void for_each_neighbor(int colc, int rowc, const T &vec, UnaryFunc f) const;
 
 
   std::vector<std::list<int>> tag;
@@ -71,7 +73,22 @@ inline bool Cell::is_isolate(int col, int row) const {
 inline bool Cell::is_isolate(double x, double y) const {
   return isolate[get_idx(x, y)];
 }
+
 inline void Cell::update(double x, double y) {
   update(get_col(x), get_row(y));
 }
+
+template <class T, class UnaryFunc>
+void Cell::for_each_neighbor(int colc, int rowc, const T &vec, UnaryFunc f) const {
+  for (int row = rowc - 1; row <= rowc + 1; row++) {
+    int tmp = row * ncols;
+    for (int col = colc - 1; col <= colc + 1; col++) {
+      int idx = col + tmp;
+      for (auto iter = tag[idx].cbegin(); iter != tag[idx].cend(); ++iter) {
+        f(vec[*iter].vertex);
+      }
+    }
+  }
+}
+
 #endif
