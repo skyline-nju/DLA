@@ -9,7 +9,8 @@ double Rect::b = 1;
 double Rect::La = 2 * Rect::a;
 double Rect::Lb = 2 * Rect::b;
 double Rect::Rab = sqrt(Rect::a * Rect::a + Rect::b * Rect::b);
-
+void (Rect::*Rect::collide_wrapper)(int, const Vec2<double> &, const Rect &,
+                                    double, double &, bool &) const;
 
 void Disk::collide(const Disk & p1, double ux, double uy,
                    double l, double &l_hit, bool &flag) const {
@@ -140,8 +141,8 @@ void Rect::collide_transverse(int idx0, const Vec2<double>& u, const Rect & rect
   }
 }
 
-void Rect::move_longitudinal(int idx0, const vector<Rect>& cluster,
-                             double lm, bool & collided) {
+void Rect::translate(const std::vector<Rect>& cluster, double lm,
+                     int idx0, bool & collided) {
   collided = false;
   double l = lm;
   Vec2<double> u;
@@ -149,7 +150,7 @@ void Rect::move_longitudinal(int idx0, const vector<Rect>& cluster,
   for (int i = 0, size = cluster.size(); i < size; i++) {
     bool flag = false;
     double l_hit;
-    collide_longitudinal(idx0, u, cluster[i], lm, l_hit, flag);
+    (this->*collide_wrapper)(idx0, u, cluster[i], lm, l_hit, flag);
     if (flag) {
       collided = true;
       if (l > l_hit) l = l_hit;
@@ -159,19 +160,30 @@ void Rect::move_longitudinal(int idx0, const vector<Rect>& cluster,
   cal_vertex();
 }
 
-void Rect::move_transverse(int idx0, const vector<Rect>& cluster,
-                           double lm, bool & collided) {
+void Rect::translate(const std::vector<Rect>& cluster, const Cell & cell,
+                     double lm, int idx0, bool & collided) {
   collided = false;
   double l = lm;
   Vec2<double> u;
   get_mov_dir(idx0, u);
-  for (int i = 0, size = cluster.size(); i < size; i++) {
-    bool flag = false;
-    double l_hit;
-    collide_transverse(idx0, u, cluster[i], lm, l_hit, flag);
-    if (flag) {
-      collided = true;
-      if (l > l_hit) l = l_hit;
+  int my_col = cell.get_col(center.x);
+  int my_row = cell.get_row(center.y);
+  if (!cell.is_isolate(my_col, my_row)) {
+    for (int row = my_row - 1; row <= my_row + 1; row++) {
+      for (int col = my_col - 1; col <= my_col + 1; col++) {
+        int idx = cell.get_idx(col, row);
+        auto beg = cell.tag[idx].cbegin();
+        auto end = cell.tag[idx].cend();
+        for (auto iter = beg; iter != end; ++iter) {
+          bool flag = false;
+          double l_hit;
+          (this->*collide_wrapper)(idx0, u, cluster[*iter], lm, l_hit, flag);
+          if (flag) {
+            collided = true;
+            if (l > l_hit) l = l_hit;
+          }
+        }
+      }
     }
   }
   center += u * l;
@@ -180,6 +192,7 @@ void Rect::move_transverse(int idx0, const vector<Rect>& cluster,
 
 void Rect::rotate(const std::vector<Rect>& cluster, double theta_m,
                   bool CW, bool & collided) {
+  double theta;
   RotStatus status(theta_m);
   vector<Vector2D> point_set;
   vector<Segment> segment_set;
@@ -188,7 +201,6 @@ void Rect::rotate(const std::vector<Rect>& cluster, double theta_m,
     get_min_angle(center, point_set, segment_set,
                   cluster[i].vertex, 4, CW, status);
   }
-  double theta;
   if (status.flag) {
     collided = true;
     theta = acos(status.cos_angle);
@@ -200,6 +212,39 @@ void Rect::rotate(const std::vector<Rect>& cluster, double theta_m,
   orient.rotate(theta);
   cal_vertex();
 }
+
+void Rect::rotate(const std::vector<Rect>& cluster, const Cell &cell,
+                  double theta_m, bool CW, bool & collided) {
+  collided = false;
+  double theta = theta_m;
+  int my_col = cell.get_col(center.x);
+  int my_row = cell.get_row(center.y);
+  if (!cell.is_isolate(my_col, my_row)) {
+    RotStatus status(theta_m);
+    vector<Vector2D> point_set;
+    vector<Segment> segment_set;
+    get_segment_set(CW, point_set, segment_set);
+    for (int row = my_row - 1; row <= my_row + 1; row++) {
+      for (int col = my_col - 1; col <= my_col + 1; col++) {
+        int idx = cell.get_idx(col, row);
+        auto beg = cell.tag[idx].cbegin();
+        auto end = cell.tag[idx].cend();
+        for (auto iter = beg; iter != end; ++iter) {
+          get_min_angle(center, point_set, segment_set,
+            cluster[*iter].vertex, 4, CW, status);
+        }
+      }
+    }
+    if (status.flag) {
+      collided = true;
+      theta = acos(status.cos_angle);
+    }
+  }
+  if (CW) theta = -theta;
+  orient.rotate(theta);
+  cal_vertex();
+}
+
 
 void Rect::output(const vector<Rect> &rect, const char *filename) {
   ofstream fout(filename);
@@ -224,18 +269,22 @@ void Rect::get_mov_dir(int idx0, Vec2<double> &u) const {
   case 0:
     u.x = orient.x;
     u.y = orient.y;
+    collide_wrapper = &Rect::collide_longitudinal;
     break;
   case 1:
     u.x = -orient.y;
     u.y = orient.x;
+    collide_wrapper = &Rect::collide_transverse;
     break;
   case 2:
     u.x = -orient.x;
     u.y = -orient.y;
+    collide_wrapper = &Rect::collide_longitudinal;
     break;
   case 3:
     u.x = orient.y;
     u.y = -orient.x;
+    collide_wrapper = &Rect::collide_transverse;
     break; 
   default:
     break;

@@ -14,5 +14,7 @@ void cal_fractal_dim(const std::vector<Disk> &cluster);
 
 void launch(Rect &p, Ran *myran);
 bool one_step(Rect &p, std::vector<Rect> &cluster, Ran *myran);
+bool one_step(Rect &p, std::vector<Rect> &cluster, Cell &cell, Ran *myran);
 void run(std::vector<Rect> &cluster, int nPar, Ran *myran);
+void run(std::vector<Rect> &cluster, int nPar, Cell &cell, Ran *myran);
 #endif

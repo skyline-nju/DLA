@@ -3,6 +3,7 @@
 #include "vec.h"
 #include "comn.h"
 #include "rotate.h"
+#include "grid.h"
 
 struct Disk
 {
@@ -32,12 +33,14 @@ struct Rect
                             double l, double &l_hit, bool &flag_collide) const;
   void collide_transverse(int idx0, const Vec2<double> &u, const Rect &rect,
                           double l, double &l_hit, bool &flag_collide) const;
-  void move_longitudinal(int idx0, const std::vector<Rect> &cluster,
-                         double lm, bool &collided);
-  void move_transverse(int idx0, const std::vector<Rect> &cluster,
-                       double lm, bool &collided);
+  void translate(const std::vector<Rect> &cluster, double lm,
+                 int idx0, bool &collided);
+  void translate(const std::vector<Rect> &cluster, const Cell &cell,
+                 double lm, int idx0, bool &collided);
   void rotate(const std::vector<Rect> &cluster, double theta_m,
-                bool clockwise, bool &collided);
+              bool clockwise, bool &collided);
+  void rotate(const std::vector<Rect> &cluster, const Cell &cell, 
+              double theta_m, bool clockwise, bool &collided);
   void get_segment_set(bool CW, std::vector<Vector2D> &my_point_set,
                        std::vector<Segment> &my_segment_set) const;
   void shift(const Vec2<double> &delta);
@@ -53,6 +56,9 @@ struct Rect
   static double La;
   static double Lb;
   static double Rab;
+  static void (Rect::*collide_wrapper)(int, const Vec2<double> &,
+                                       const Rect &, double, double &,
+                                       bool &) const;
 };
 
 inline double Disk::get_rr(const Disk &d2) {

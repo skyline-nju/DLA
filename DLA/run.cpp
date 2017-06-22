@@ -114,37 +114,30 @@ void launch(Rect &p, Ran *myran) {
 bool one_step(Rect &p, vector<Rect> &cluster, Ran *myran) {
   int idx0 = int(myran->doub() * 6);
   bool collided = false;
-  switch (idx0) {
-  case 0: {
-    p.move_longitudinal(idx0, cluster, Lmin, collided);
-    break;
-  }
-  case 1: {
-    p.move_transverse(idx0, cluster, Lmin, collided);
-    break;
-  }
-  case 2: {
-    p.move_longitudinal(idx0, cluster, Lmin, collided);
-    break;
-  }
-  case 3: {
-    p.move_transverse(idx0, cluster, Lmin, collided);
-    break;
-  }
-  case 4: {
+  if (idx0 < 4) {
+    p.translate(cluster, Lmin, idx0, collided);
+  } else if (idx0 == 4) {
     p.rotate(cluster, theta_m, true, collided);
-    break;
-  }
-  case 5: {
+  } else {
     p.rotate(cluster, theta_m, false, collided);
-  }
-  default:
-    break;
   }
   return collided;
 }
 
-void run(std::vector<Rect>& cluster, int nPar, Ran * myran) {
+bool one_step(Rect &p, vector<Rect> &cluster, Cell &cell, Ran *myran) {
+  int idx0 = int(myran->doub() * 6);
+  bool collided = false;
+  if (idx0 < 4) {
+    p.translate(cluster, cell, Lmin, idx0, collided);
+  } else if (idx0 == 4) {
+    p.rotate(cluster, cell, theta_m, true, collided);
+  } else {
+    p.rotate(cluster, cell, theta_m, false, collided);
+  }
+  return collided;
+}
+
+void run(vector<Rect>& cluster, int nPar, Ran * myran) {
   cluster.push_back(Rect(0, 0, 0));
   while (cluster.size() < nPar) {
     Rect p0;
@@ -168,3 +161,31 @@ void run(std::vector<Rect>& cluster, int nPar, Ran * myran) {
     }
   }
 }
+
+void run(std::vector<Rect>& cluster, int nPar, Cell & cell, Ran * myran) {
+  cluster.push_back(Rect(0, 0, 0));
+  cell.update(cluster[0].center.x, cluster[0].center.y);
+  cout << "initialized" << endl;
+  while (cluster.size() < nPar) {
+    Rect p0;
+    launch(p0, myran);
+    while (true) {
+      if (one_step(p0, cluster, cell, myran)) {
+        cell.update(p0.center.x, p0.center.y);
+        cluster.push_back(p0);
+        cout << "n = " << cluster.size() << endl;
+        double rr = p0.center.square();
+        if (rr > Rmax2) {
+          Rmax2 = rr;
+          Rmax = sqrt(Rmax2);
+          R_release = Rmax + 18;
+          Rkill = R_release * 5;
+        }
+        break;
+      } else if (p0.center.square() > Rkill * Rkill) {
+        break;
+      }
+    }
+  }
+}
+

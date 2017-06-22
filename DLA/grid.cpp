@@ -69,6 +69,7 @@ Grid::Grid(int n, int dmax): ncols(n), nrows(n), Dmax(dmax) {
   update(col0, row0);
 }
 
+
 Grid::~Grid() {
   delete[] cluster;
   delete[] dis;
@@ -111,3 +112,37 @@ void Grid::show(int m) {
   show_grid(cluster, ncols, m);
 }
 
+Cell::Cell(int n, double l0) : ncols(n), nrows(n), l(l0), ncell(n*n) {
+  tag.reserve(ncell);
+  isolate.reserve(ncell);
+  for (int i = 0; i < ncell; i++) {
+    tag.push_back(list<int>());
+    isolate.push_back(true);
+  }
+  int col0, row0;
+  if (n % 2 == 0) {
+    col0 = row0 = n / 2;
+    x_left = y_lower = (-n / 2) * l;
+  } else {
+    col0 = row0 = (n - 1) / 2;
+    x_left = y_lower = -(n - 1) / 2 * l;
+  }
+  particle_num = 0;
+  one_over_l = 1 / l;
+  cout << "xl = " << x_left << endl;
+  cout << "yl = " << y_lower << endl;
+  cout << "l = " << l << "\t1/l = " << one_over_l << endl;
+  cout << "ncols = " << ncols << endl;
+}
+
+void Cell::update(int coli, int rowi) {
+  int idx = get_idx(coli, rowi);
+  for (int row = rowi - 1; row <= rowi + 1; row++) {
+    int tmp = row * ncols;
+    for (int col = coli - 1; col <= coli + 1; col++) {
+      isolate[col + tmp] = false;
+    }
+  }
+  tag[idx].push_back(particle_num);
+  particle_num++;
+}
