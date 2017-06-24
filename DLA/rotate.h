@@ -42,8 +42,10 @@ struct RotStatus
   RotStatus(double max_angle): cos_angle(cos(max_angle)), flag(false) {}
   double cos_angle;
   double sin_angle;
-  Vec2<double> contact_point;
-  Segment contact_line;
+  int neighbor_tag;
+  int idx_vertex;
+  int idx_edge;
+  bool vertex_edge;
   bool flag;
 };
 
@@ -69,4 +71,10 @@ void get_min_angle(const Vec2<double> &O,
                    const Vec2<double> *B, int nB, bool CW,
                    RotStatus &status);
 
+void get_min_angle(const std::vector<Vector2D>& point_set_A,
+                   const std::vector<Segment>& line_set_A,
+                   const std::vector<int>& point_idx_A,
+                   const std::vector<int>& line_idx_A,
+                   const Vec2<double> &O, const Vec2<double> *B, int nB,
+                   bool CW, int neighbor, RotStatus &status);
 #endif

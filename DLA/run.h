@@ -4,7 +4,8 @@
 #include <fstream>
 #include "rand.h"
 #include "comn.h"
-#include "particle.h"
+#include "rect.h"
+#include "disk.h"
 #include "grid.h"
 
 void launch(Disk &p, Ran *myran);

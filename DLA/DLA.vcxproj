@@ -140,9 +140,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="comn.cpp" />
+    <ClCompile Include="disk.cpp" />
     <ClCompile Include="grid.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="particle.cpp" />
+    <ClCompile Include="rect.cpp" />
     <ClCompile Include="rand.cpp" />
     <ClCompile Include="rotate.cpp" />
     <ClCompile Include="run.cpp" />
@@ -150,10 +151,11 @@
   <ItemGroup>
     <ClInclude Include="cmdline.h" />
     <ClInclude Include="comn.h" />
+    <ClInclude Include="disk.h" />
     <ClInclude Include="grid.h" />
     <ClInclude Include="rotate.h" />
     <ClInclude Include="run.h" />
-    <ClInclude Include="particle.h" />
+    <ClInclude Include="rect.h" />
     <ClInclude Include="rand.h" />
     <ClInclude Include="vec.h" />
   </ItemGroup>

@@ -30,10 +30,13 @@
     <ClCompile Include="grid.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="particle.cpp">
+    <ClCompile Include="rotate.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="rotate.cpp">
+    <ClCompile Include="disk.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="rect.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -47,9 +50,6 @@
     <ClInclude Include="rand.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="particle.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="run.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -60,6 +60,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="rotate.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="disk.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="rect.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,41 +1,43 @@
-#ifndef PARTICLE_H
-#define PARTICLE_H
+#ifndef RECT_H
+#define RECT_H
 #include "vec.h"
 #include "comn.h"
 #include "rotate.h"
 #include "grid.h"
 
-struct Disk
-{
-  Disk() { x = y = 0; }
-  Disk(double x0, double y0) :x(x0), y(y0) {}
-  double get_rr(const Disk &d2);
-  void collide(const Disk &d, double ux, double uy,
-               double l, double &l_hit, bool &flag) const;
-  static void output(const std::vector<Disk> &cluster);
-  static void output_xyz(const std::vector<Disk> &cluster);
-
-  double x;
-  double y;
-
-  static double sigma;
-  static double rp;
-};
 
 struct TranStatus
 {
   TranStatus(double l) : l_hit(l), flag(false) {}
+  void update(double d, bool vertex_to_edge,
+              int contact_vertex, int contact_edge, int tag);
   double l_hit;
-  bool flag;
   int neighbor_tag;
-  Vec2<double> contact_point;
+  int cur_neighbor;
+  int idx_vertex;
+  int idx_edge;
+  bool vertex_edge;                 
+  bool flag;
 };
+
+inline void TranStatus::update(double d, bool vertex_to_edge,
+                               int contact_vertex, int contact_edge, int tag) {
+  if (d <= l_hit) {
+    l_hit = d;
+    idx_vertex = contact_vertex;
+    idx_edge = contact_edge;
+    neighbor_tag = tag;
+    vertex_edge = vertex_to_edge;
+    flag = true;
+ }
+}
 
 struct Rect
 {
   Rect() {}
-  Rect(double xc, double yc, double theta);
-  Rect(double xc, double yc, double ux, double uy);
+  Rect(int tag0): tag(tag0) {}
+  Rect(double xc, double yc, double theta, int tag0);
+  Rect(double xc, double yc, double ux, double uy, int tag0);
   void cal_vertex();
   void get_mov_dir(int idx0, Vec2<double> &u) const;
   void collide_longitudinal(int idx0, const Vec2<double> &u, const Rect &rect,
@@ -48,8 +50,6 @@ struct Rect
                           TranStatus &status) const;
   void translate(const std::vector<Rect> &cluster, double lm,
                  int idx0, bool &collided);
-  void translate2(const std::vector<Rect> &cluster, double lm,
-                  int idx0, bool &collided);
   void translate(const std::vector<Rect> &cluster, const Cell &cell,
                  double lm, int idx0, bool &collided);
   void rotate(const std::vector<Rect> &cluster, double theta_m,
@@ -58,10 +58,15 @@ struct Rect
               double theta_m, bool clockwise, bool &collided);
   void get_segment_set(bool CW, std::vector<Vector2D> &my_point_set,
                        std::vector<Segment> &my_segment_set) const;
+  void get_segment_set(bool CW, std::vector<Vector2D>& my_point_set,
+                       std::vector<Segment>& my_segment_set,
+                       std::vector<int>& my_point_idx,
+                       std::vector<int>& my_segment_idx);
   void shift(const Vec2<double> &delta);
   static void output(const std::vector<Rect> &rect);
   static void output(const std::vector<Rect> &rect, const char *f);
 
+  int tag;
   Vec2<double> center;
   Vec2<double> orient;
   Vec2<double> vertex[4];
@@ -75,10 +80,6 @@ struct Rect
                                        const Rect &, double, double &,
                                        bool &) const;
 };
-
-inline double Disk::get_rr(const Disk &d2) {
-  return (x - d2.x) * (x - d2.x) + (y - d2.y) * (y - d2.y);
-}
 
 inline void Rect::cal_vertex() {
   Vec2<double> dR1(orient.x * a + orient.y * b, orient.y * a - orient.x * b);
@@ -97,6 +98,7 @@ inline void Rect::shift(const Vec2<double> &Delta) {
 void dis_point_edge(double &d, const double *X, const double *Y,
                     int size, int im, double LY);
 
-void dis_point_edge(double &d, int &delta_n, const double *X, const double *Y,
-                    int size, int im, double LY);
+void dis_point_edge(double &d, int &contact_vertex, int &contact_edge,
+                    const double *X, const double *Y, int size,
+                    int im, double LY);
 #endif

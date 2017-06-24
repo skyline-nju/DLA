@@ -1,5 +1,6 @@
 #include "run.h"
-#include "particle.h"
+#include "disk.h"
+#include "rect.h"
 #include "rotate.h"
 
 using namespace std;
@@ -8,8 +9,8 @@ double Lmin = 1;
 double Rmax = 0;
 double Rmax2 = 0;
 double R_release = Rmax + 18;
-double Rkill = R_release * 5;
-double theta_m = PI / 36;
+double Rkill = R_release * 4;
+double theta_m = PI / 72;
 
 void launch(Disk &p, Ran *myran) {
   double theta = myran->doub() * 2.0 * PI;
@@ -107,15 +108,19 @@ void cal_fractal_dim(const std::vector<Disk>& cluster) {
 
 void launch(Rect &p, Ran *myran) {
   double theta = myran->doub() * 2.0 * PI;
-  double angle = myran->doub() * 360;
-  p = Rect(R_release * cos(theta), R_release * sin(theta), angle);
+  double angle = myran->doub() * 2.0 * PI;
+  p.center.x = R_release * cos(theta);
+  p.center.y = R_release * sin(theta);
+  p.orient.x = cos(angle);
+  p.orient.y = sin(angle);
+  p.cal_vertex();
 }
 
 bool one_step(Rect &p, vector<Rect> &cluster, Ran *myran) {
   int idx0 = int(myran->doub() * 6);
   bool collided = false;
   if (idx0 < 4) {
-    p.translate2(cluster, Lmin, idx0, collided);
+    p.translate(cluster, Lmin, idx0, collided);
   } else if (idx0 == 4) {
     p.rotate(cluster, theta_m, true, collided);
   } else {
@@ -127,8 +132,10 @@ bool one_step(Rect &p, vector<Rect> &cluster, Ran *myran) {
 bool one_step(Rect &p, vector<Rect> &cluster, Cell &cell, Ran *myran) {
   int idx0 = int(myran->doub() * 6);
   bool collided = false;
-  if (idx0 < 4) {
+  if (idx0 == 0 || idx0 == 2) {
     p.translate(cluster, cell, Lmin, idx0, collided);
+  } else if (idx0 == 1 || idx0 == 3) {
+    p.translate(cluster, cell, Lmin * 0.5, idx0, collided);
   } else if (idx0 == 4) {
     p.rotate(cluster, cell, theta_m, true, collided);
   } else {
@@ -138,9 +145,9 @@ bool one_step(Rect &p, vector<Rect> &cluster, Cell &cell, Ran *myran) {
 }
 
 void run(vector<Rect>& cluster, int nPar, Ran * myran) {
-  cluster.push_back(Rect(0, 0, 0));
+  cluster.push_back(Rect(0, 0, 0, 0));
   while (cluster.size() < nPar) {
-    Rect p0;
+    Rect p0(cluster.size());
     launch(p0, myran);
     while (true) {
       bool flag = one_step(p0, cluster, myran);
@@ -163,11 +170,11 @@ void run(vector<Rect>& cluster, int nPar, Ran * myran) {
 }
 
 void run(std::vector<Rect>& cluster, int nPar, Cell & cell, Ran * myran) {
-  cluster.push_back(Rect(0, 0, 0));
+  cluster.push_back(Rect(0, 0, 0, 0));
   cell.update(cluster[0].center.x, cluster[0].center.y);
   cout << "initialized" << endl;
   while (cluster.size() < nPar) {
-    Rect p0;
+    Rect p0(cluster.size());
     launch(p0, myran);
     while (true) {
       if (one_step(p0, cluster, cell, myran)) {
@@ -179,7 +186,7 @@ void run(std::vector<Rect>& cluster, int nPar, Cell & cell, Ran * myran) {
           Rmax2 = rr;
           Rmax = sqrt(Rmax2);
           R_release = Rmax + 18;
-          Rkill = R_release * 5;
+          Rkill = R_release * 4;
         }
         break;
       } else if (p0.center.square() > Rkill * Rkill) {
