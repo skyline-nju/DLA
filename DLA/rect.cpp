@@ -9,8 +9,18 @@ double Rect::b = 1;
 double Rect::La = 2 * Rect::a;
 double Rect::Lb = 2 * Rect::b;
 double Rect::Rab = sqrt(Rect::a * Rect::a + Rect::b * Rect::b);
-void (Rect::*Rect::collide_wrapper)(int, const Vec2<double> &, const Rect &,
-                                    double, double &, bool &) const;
+
+void TranStatus::update(double d, bool vertex_to_edge,
+  int contact_vertex, int contact_edge, int tag) {
+  if (d <= l_hit) {
+    l_hit = d;
+    idx_vertex = contact_vertex;
+    idx_edge = contact_edge;
+    neighbor_tag = tag;
+    vertex_edge = vertex_to_edge;
+    flag = true;
+  }
+}
 
 Rect::Rect(double xc, double yc, double theta, int tag0):
            center(xc, yc), tag(tag0) {
@@ -25,45 +35,6 @@ Rect::Rect(double xc, double yc, double ux, double uy, int tag0):
   cal_vertex();
 }
 
-void Rect::collide_longitudinal(int idx0, const Vec2<double>& u, const Rect & rect,
-                                double l, double &l_hit, bool &flag_collide) const {
-  double LY = idx0 == 0 || idx0 == 2 ? Lb : La;
-  double X[4];
-  bool flag_all_negative = true;
-  for (int i = 0; i < 4; i++) {
-    X[i] = u.dot(rect.vertex[i] - vertex[idx0]);
-    if (X[i] > 0)
-      flag_all_negative = false;
-  }
-  if (flag_all_negative) {
-    l_hit = l;
-    flag_collide = false;
-  } else {
-    bool flag_all_gt_L = true;
-    bool flag_all_lt_zero = true;
-    Vec2<double> v(-u.y, u.x);
-    double Y[4];
-    for (int i = 0; i < 4; i++) {
-      Y[i] = v.dot(rect.vertex[i] - vertex[idx0]);
-      if (Y[i] >= 0)
-        flag_all_lt_zero = false;
-      if (Y[i] <= LY)
-        flag_all_gt_L = false;
-    }
-    if (flag_all_lt_zero || flag_all_gt_L) {
-      l_hit = l;
-      flag_collide = false;
-    } else {
-      int im = get_idx_min(X, 4);
-      if (Y[im] >= 0 && Y[im] <= LY) {
-        l_hit = X[im];
-      } else {
-        dis_point_edge(l_hit, X, Y, 4, im, LY);
-      }
-      flag_collide = l_hit <= l ? true : false;
-    }
-  }
-}
 
 void Rect::collide_longitudinal(int idx0, const Vec2<double>& u,
                                 const Rect &rect, TranStatus &status) const {
@@ -98,44 +69,6 @@ void Rect::collide_longitudinal(int idx0, const Vec2<double>& u,
         dis_point_edge(d, contact_vertex, contact_edge, X, Y, 4, im, LY);
         status.update(d, true, contact_vertex, contact_edge, rect.tag);
       }
-    }
-  }
-}
-
-void Rect::collide_transverse(int idx0, const Vec2<double>& u, const Rect & rect,
-                              double l, double &l_hit, bool &flag_collide) const {
-  double LY = La;
-  double X[4];
-  double Y[4];
-  bool flag_valid[4];
-  int n_valid = 0;
-  Vec2<double> v(-u.y, u.x);
-  for (int i = 0; i < 4; i++) {
-    Vec2<double> dR(rect.vertex[i] - vertex[idx0]);
-    X[i] = u.dot(dR);
-    Y[i] = v.dot(dR);
-    if (X[i] > 0 && Y[i] >=0 && Y[i] <= LY) {
-      flag_valid[i] = true;
-      n_valid++;
-    } else {
-      flag_valid[i] = false;
-    }
-  }
-  if (n_valid == 0) {
-    l_hit = l;
-    flag_collide = false;
-  } else if (n_valid >= 3) {
-    int im = get_idx_min(X, 4);
-    l_hit = X[im];
-    flag_collide = l_hit <= l ? true : false;
-  } else {
-    int im = get_idx_min(X, 4);
-    if (flag_valid[im]) {
-      l_hit = X[im];
-      flag_collide = l_hit <= l ? true : false;
-    } else {
-      dis_point_edge(l_hit, X, Y, 4, im, LY);
-      flag_collide = l_hit <= l ? true : false;
     }
   }
 }
@@ -176,91 +109,55 @@ void Rect::collide_transverse(int idx0, const Vec2<double>& u,
   }
 }
 
-void Rect::translate(const std::vector<Rect>& cluster, double lm,
-                      int idx0, bool & collided) {
-  collided = false;
-  TranStatus status(lm);
-  Vec2<double> u;
-  get_mov_dir(idx0, u);
-  for (int i = 0, size = cluster.size(); i < size; i++) {
-    if (idx0 == 0 || idx0 == 2) {
-      collide_longitudinal(idx0, u, cluster[i], status);
-    } else {
-      collide_transverse(idx0, u, cluster[i], status);
-    }
-  }
-  if (status.flag) {
-    collided = true;
-  } else {
-    collided = false;
-  }
-  center += u * status.l_hit;
-  cal_vertex();
-  //if (status.flag) {
-  //  cout << cluster.size() << "\t" << status.neighbor_tag << endl;
-  //  if (status.vertex_edge) {
-  //    fout2 << vertex[status.idx_vertex] << endl;
-  //    fout3 << cluster[status.neighbor_tag].vertex[status.idx_edge] << "\t"
-  //          << cluster[status.neighbor_tag].vertex[(status.idx_edge + 1) % 4] << endl;
-  //  }
-  //  else {
-  //    fout2 << cluster[status.neighbor_tag].vertex[status.idx_vertex] << endl;
-  //    fout3 << vertex[status.idx_edge] << "\t"
-  //      << vertex[(status.idx_edge + 1) % 4] << endl;
-  //  }
-  //}
-}
-
 void Rect::translate(const std::vector<Rect>& cluster, const Cell & cell,
                      double lm, int idx0, bool & collided) {
   collided = false;
-  double l = lm;
+  TranStatus status(lm);
   Vec2<double> u;
   get_mov_dir(idx0, u);
   int my_col = cell.get_col(center.x);
   int my_row = cell.get_row(center.y);
   if (!cell.is_isolate(my_col, my_row)) {
-    //auto lambda = [&, idx0]
-    for (int row = my_row - 1; row <= my_row + 1; row++) {
-      for (int col = my_col - 1; col <= my_col + 1; col++) {
-        int idx = cell.get_idx(col, row);
-        auto beg = cell.tag[idx].cbegin();
-        auto end = cell.tag[idx].cend();
-        for (auto iter = beg; iter != end; ++iter) {
-          bool flag = false;
-          double l_hit;
-          (this->*collide_wrapper)(idx0, u, cluster[*iter], lm, l_hit, flag);
-          if (flag) {
-            collided = true;
-            if (l > l_hit) l = l_hit;
-          }
-        }
-      }
+    if (idx0 == 0 || idx0 == 2) {
+      auto lambda = [&, idx0](const Rect &rect) {
+        collide_longitudinal(idx0, u, rect, status);
+      };
+      cell.for_each_neighbor(my_col, my_row, cluster, lambda);
+    } else {
+      auto lambda = [&, idx0](const Rect &rect) {
+        collide_transverse(idx0, u, rect, status);
+      };
+      cell.for_each_neighbor(my_col, my_row, cluster, lambda);
     }
   }
-  center += u * l;
+  if (status.flag)
+    collided = true;
+  center += u * status.l_hit;
   cal_vertex();
+  show_contact(status, fout2, fout3, vertex, cluster);
 }
 
-void Rect::rotate(const std::vector<Rect>& cluster, double theta_m,
-                  bool CW, bool & collided) {
+void Rect::rotate(const std::vector<Rect>& cluster, const Cell &cell,
+                  double theta_m, bool CW, bool & collided) {
   double theta;
   RotStatus status(theta_m);
-  vector<Vector2D> point_set;
-  vector<Segment> segment_set;
-  vector<int> point_idx;
-  vector<int> segment_idx;
-  get_segment_set(CW, point_set, segment_set, point_idx, segment_idx);
-  for (int i = 0, size = cluster.size(); i < size; i++) {
-    //get_min_angle(center, point_set, segment_set,
-    //  cluster[i].vertex, 4, CW, status);
-    get_min_angle(point_set, segment_set, point_idx, segment_idx,
-                  center, cluster[i].vertex, 4, CW, i, status);
+  int my_col = cell.get_col(center.x);
+  int my_row = cell.get_row(center.y);
+  if (!cell.is_isolate(my_col, my_row)) {
+    vector<Vector2D> point_set;
+    vector<Segment> segment_set;
+    vector<int> point_idx;
+    vector<int> segment_idx;
+    get_segment_set(CW, point_set, segment_set, point_idx, segment_idx);
+    auto lambda = [&, CW](const Rect &rect) {
+      get_min_angle(point_set, segment_set, point_idx, segment_idx, center,
+                    rect.vertex, 4, CW, rect.tag, status);
+    };
+    cell.for_each_neighbor(my_col, my_row, cluster, lambda);
   }
   if (status.flag) {
     collided = true;
     theta = acos(status.cos_angle);
-    //fout << status.contact_point << endl;
   } else {
     collided = false;
     theta = theta_m;
@@ -268,44 +165,8 @@ void Rect::rotate(const std::vector<Rect>& cluster, double theta_m,
   if (CW) theta = -theta;
   orient.rotate(theta);
   cal_vertex();
-  if (status.flag) {
-    if (status.vertex_edge) {
-      fout2 << vertex[status.idx_vertex] << endl;
-      fout3 << cluster[status.neighbor_tag].vertex[status.idx_edge] << "\t"
-        << cluster[status.neighbor_tag].vertex[(status.idx_edge + 1) % 4] << endl;
-    } else {
-      fout2 << cluster[status.neighbor_tag].vertex[status.idx_vertex] << endl;
-      fout3 << vertex[status.idx_edge] << "\t"
-        << vertex[(status.idx_edge + 1) % 4] << endl;
-    }
-  }
+  show_contact(status, fout2, fout3, vertex, cluster);
 }
-
-void Rect::rotate(const std::vector<Rect>& cluster, const Cell &cell,
-                  double theta_m, bool CW, bool & collided) {
-  collided = false;
-  double theta = theta_m;
-  int my_col = cell.get_col(center.x);
-  int my_row = cell.get_row(center.y);
-  if (!cell.is_isolate(my_col, my_row)) {
-    RotStatus status(theta_m);
-    vector<Vector2D> point_set;
-    vector<Segment> segment_set;
-    get_segment_set(CW, point_set, segment_set);
-    auto lambda = [&, CW](const Vec2<double> *B) {
-      get_min_angle(center, point_set, segment_set, B, 4, CW, status);
-    };
-    cell.for_each_neighbor(my_col, my_row, cluster, lambda);
-    if (status.flag) {
-      collided = true;
-      theta = acos(status.cos_angle);
-    }
-  }
-  if (CW) theta = -theta;
-  orient.rotate(theta);
-  cal_vertex();
-}
-
 
 void Rect::output(const vector<Rect> &rect, const char *filename) {
   ofstream fout(filename);
@@ -330,22 +191,18 @@ void Rect::get_mov_dir(int idx0, Vec2<double> &u) const {
   case 0:
     u.x = orient.x;
     u.y = orient.y;
-    collide_wrapper = &Rect::collide_longitudinal;
     break;
   case 1:
     u.x = -orient.y;
     u.y = orient.x;
-    collide_wrapper = &Rect::collide_transverse;
     break;
   case 2:
     u.x = -orient.x;
     u.y = -orient.y;
-    collide_wrapper = &Rect::collide_longitudinal;
     break;
   case 3:
     u.x = orient.y;
     u.y = -orient.x;
-    collide_wrapper = &Rect::collide_transverse;
     break; 
   default:
     break;
@@ -407,28 +264,6 @@ void Rect::get_segment_set(bool CW, vector<Vector2D>& my_point_set,
       my_segment_set.push_back(Segment(OM, ON, true));
       my_segment_idx.push_back(j);
     }
-  }
-}
-
-void dis_point_edge(double &d, const double *X, const double *Y,
-                    int size, int im, double LY) {
-  int ipre = im - 1;
-  int inxt = im + 1;
-  if (ipre == -1)
-    ipre = size - 1;
-  else if (inxt == size)
-    inxt = 0;
-  int i2;
-  if (Y[im] > LY) {
-    i2 = Y[ipre] <= LY ? ipre : inxt;
-  } else {
-    i2 = Y[ipre] >= 0 ? ipre : inxt;
-  }
-  double k = (X[i2] - X[im]) / (Y[i2] - Y[im]);
-  if (k >= 0) {
-    d = k * (-Y[im]) + X[im];
-  } else {
-    d = k * (LY - Y[im]) + X[im];
   }
 }
 

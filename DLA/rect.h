@@ -13,24 +13,11 @@ struct TranStatus
               int contact_vertex, int contact_edge, int tag);
   double l_hit;
   int neighbor_tag;
-  int cur_neighbor;
   int idx_vertex;
   int idx_edge;
   bool vertex_edge;                 
   bool flag;
 };
-
-inline void TranStatus::update(double d, bool vertex_to_edge,
-                               int contact_vertex, int contact_edge, int tag) {
-  if (d <= l_hit) {
-    l_hit = d;
-    idx_vertex = contact_vertex;
-    idx_edge = contact_edge;
-    neighbor_tag = tag;
-    vertex_edge = vertex_to_edge;
-    flag = true;
- }
-}
 
 struct Rect
 {
@@ -41,19 +28,11 @@ struct Rect
   void cal_vertex();
   void get_mov_dir(int idx0, Vec2<double> &u) const;
   void collide_longitudinal(int idx0, const Vec2<double> &u, const Rect &rect,
-                            double l, double &l_hit, bool &flag_collide) const;
-  void collide_longitudinal(int idx0, const Vec2<double> &u, const Rect &rect,
                             TranStatus &status) const;
   void collide_transverse(int idx0, const Vec2<double> &u, const Rect &rect,
-                          double l, double &l_hit, bool &flag_collide) const;
-  void collide_transverse(int idx0, const Vec2<double> &u, const Rect &rect,
                           TranStatus &status) const;
-  void translate(const std::vector<Rect> &cluster, double lm,
-                 int idx0, bool &collided);
   void translate(const std::vector<Rect> &cluster, const Cell &cell,
                  double lm, int idx0, bool &collided);
-  void rotate(const std::vector<Rect> &cluster, double theta_m,
-              bool clockwise, bool &collided);
   void rotate(const std::vector<Rect> &cluster, const Cell &cell, 
               double theta_m, bool clockwise, bool &collided);
   void get_segment_set(bool CW, std::vector<Vector2D> &my_point_set,
@@ -76,9 +55,6 @@ struct Rect
   static double La;
   static double Lb;
   static double Rab;
-  static void (Rect::*collide_wrapper)(int, const Vec2<double> &,
-                                       const Rect &, double, double &,
-                                       bool &) const;
 };
 
 inline void Rect::cal_vertex() {
@@ -95,10 +71,25 @@ inline void Rect::shift(const Vec2<double> &Delta) {
   cal_vertex();
 }
 
-void dis_point_edge(double &d, const double *X, const double *Y,
-                    int size, int im, double LY);
-
 void dis_point_edge(double &d, int &contact_vertex, int &contact_edge,
                     const double *X, const double *Y, int size,
                     int im, double LY);
+
+template <class T>
+void show_contact(const T &status, std::ofstream &fout1,
+                  std::ofstream &fout2, Vec2<double> *my_vertex,
+                  const std::vector<Rect> &cluster) {
+  if (status.flag) {
+    if (status.vertex_edge) {
+      fout1 << my_vertex[status.idx_vertex] << endl;
+      fout2 << cluster[status.neighbor_tag].vertex[status.idx_edge] << "\t"
+            << cluster[status.neighbor_tag].vertex[(status.idx_edge + 1) % 4]
+            << endl;
+    } else {
+      fout1 << cluster[status.neighbor_tag].vertex[status.idx_vertex] << endl;
+      fout2 << my_vertex[status.idx_edge] << "\t"
+            << my_vertex[(status.idx_edge + 1) % 4] << endl;
+    }
+  }
+}
 #endif

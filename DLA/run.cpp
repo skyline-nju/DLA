@@ -19,53 +19,11 @@ void launch(Disk &p, Ran *myran) {
 }
 
 bool one_step(Disk &p0, vector<Disk> &cluster, Ran *myran, Grid &grid) {
-  bool flag_stick;
-  int col0 = int(p0.x - grid.x_left);
-  int row0 = int(p0.y - grid.y_lower);
-  int d_wc = grid.get_dis(col0, row0);
-  double theta = myran->doub() * 2.0 * PI;
-  double ux = cos(theta);
-  double uy = sin(theta);
-  double step_size;
-  if (d_wc <= 4) {
-    int count_collision = 0;
-    double l_hit_min;
-    for (int row = row0 - 4; row <= row0 + 4; row++) {
-      for (int col = col0 - 4; col <= col0 + 4; col++) {
-        int tag = grid.get_tag(col, row);
-        if (tag > 0) {
-          bool flag;
-          double l_hit;
-          p0.collide(cluster[tag - 1], ux, uy, Lmin, l_hit, flag);
-          if (flag) {
-            if (count_collision && l_hit_min > l_hit) {
-              l_hit_min = l_hit;
-            } else {
-              l_hit_min = l_hit;
-            }
-            count_collision++;
-          }
-        }
-      }
-    }
-    if (count_collision > 0) {
-      step_size = l_hit_min;
-      flag_stick = true;
-    } else {
-      step_size = Lmin;
-      flag_stick = false;
-    }
-  } else {
-    step_size = d_wc - 4;
-    flag_stick = false;
-  }
-  p0.x += step_size * ux;
-  p0.y += step_size * uy;
-  if (flag_stick) {
-    cluster.push_back(p0);
-    grid.update(p0.x, p0.y);
-  }
-  return flag_stick;
+  Status status(Lmin);
+  p0.move(cluster, myran, grid, status);
+  if (status.flag)
+    p0.slip(cluster, myran, grid, status);
+  return status.flag;
 }
 
 void run(vector<Disk> &cluster, int nPar, Ran *myran, Grid &grid) {
@@ -73,17 +31,20 @@ void run(vector<Disk> &cluster, int nPar, Ran *myran, Grid &grid) {
     Disk p0;
     launch(p0, myran);
     while (true) {
-      bool flag = one_step(p0, cluster, myran, grid);
-      double r2 = p0.x * p0.x + p0.y * p0.y;
-      if (flag) {
+      if (one_step(p0, cluster, myran, grid)) {
+        cluster.push_back(p0);
+        grid.update(p0.x, p0.y);
+        double r2 = p0.x * p0.x + p0.y * p0.y;
+        if (cluster.size() % 50000 == 0)
+          cout << "N = " << cluster.size() << endl;
         if (r2 > Rmax2) {
           Rmax2 = r2;
           Rmax = sqrt(Rmax2);
-          R_release = Rmax + 5;
-          Rkill = R_release * 5;
+          R_release = Rmax + 4;
+          Rkill = R_release * 4;
         }
         break;
-      } else if (r2 > Rkill * Rkill){
+      } else if (p0.x * p0.x + p0.y * p0.y > Rkill * Rkill){
         break;
       }
     }
@@ -116,57 +77,18 @@ void launch(Rect &p, Ran *myran) {
   p.cal_vertex();
 }
 
-bool one_step(Rect &p, vector<Rect> &cluster, Ran *myran) {
-  int idx0 = int(myran->doub() * 6);
-  bool collided = false;
-  if (idx0 < 4) {
-    p.translate(cluster, Lmin, idx0, collided);
-  } else if (idx0 == 4) {
-    p.rotate(cluster, theta_m, true, collided);
-  } else {
-    p.rotate(cluster, theta_m, false, collided);
-  }
-  return collided;
-}
 
 bool one_step(Rect &p, vector<Rect> &cluster, Cell &cell, Ran *myran) {
   int idx0 = int(myran->doub() * 6);
   bool collided = false;
-  if (idx0 == 0 || idx0 == 2) {
+  if (idx0 < 4) {
     p.translate(cluster, cell, Lmin, idx0, collided);
-  } else if (idx0 == 1 || idx0 == 3) {
-    p.translate(cluster, cell, Lmin * 0.5, idx0, collided);
   } else if (idx0 == 4) {
     p.rotate(cluster, cell, theta_m, true, collided);
   } else {
     p.rotate(cluster, cell, theta_m, false, collided);
   }
   return collided;
-}
-
-void run(vector<Rect>& cluster, int nPar, Ran * myran) {
-  cluster.push_back(Rect(0, 0, 0, 0));
-  while (cluster.size() < nPar) {
-    Rect p0(cluster.size());
-    launch(p0, myran);
-    while (true) {
-      bool flag = one_step(p0, cluster, myran);
-      if (flag) {
-        cluster.push_back(p0);
-        //cout << cluster.size() << endl;
-        double rr = p0.center.square();
-        if (rr > Rmax2) {
-          Rmax2 = rr;
-          Rmax = sqrt(Rmax2);
-          R_release = Rmax + 18;
-          Rkill = R_release * 5;
-        }
-        break;
-      } else if (p0.center.square() > Rkill * Rkill) {
-        break;
-      }
-    }
-  }
 }
 
 void run(std::vector<Rect>& cluster, int nPar, Cell & cell, Ran * myran) {

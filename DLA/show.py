@@ -68,7 +68,7 @@ def show_rect(file, a, b, ax=None, fill=False):
 if __name__ == "__main__":
     # ax = plt.subplot(111)
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6, 6))
-    show_rect("rect_60.dat", 14, 2, ax)
+    show_rect("rect_100.dat", 14, 2, ax)
     # show_rect("traj.dat", 14, 2, ax, fill=False)
     x = []
     y = []
@@ -90,13 +90,3 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.show()
     plt.close()
-    # with open("traj.dat") as f:
-    #     lines = f.readlines()
-    #     x = np.zeros(len(lines))
-    #     y = np.zeros_like(x)
-    #     for i, line in enumerate(lines):
-    #         s = line.split("\t")
-    #         x[i] = float(s[0])
-    #         y[i] = float(s[1])
-    # plt.plot(x, y, ".")
-    # plt.show()

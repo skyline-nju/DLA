@@ -3,10 +3,6 @@
 #include <list>
 #include <vector>
 
-void show_grid(int *grid, int n);
-
-void show_grid(int *grid, int n, int m);
-
 class Grid
 {
 public:
@@ -14,13 +10,15 @@ public:
   ~Grid();
   void update(int coli, int rowi);
   void update(double x, double y);
-  int get_dis(int col, int row) { return dis[col + row * ncols]; }
-  int get_tag(int col, int row) { return cluster[col + row * ncols]; }
+  int get_dis(int col, int row) const { return dis[col + row * ncols]; }
+  int get_tag(int col, int row) const { return cluster[col + row * ncols]; }
+  int get_col(double x) const { return int(x - x_left); }
+  int get_row(double y) const { return int(y - y_lower); }
   void show();
   void show(int m);
 
   int *cluster;
-  int *dis;
+  unsigned char *dis;
   int *vicinity;
   int ncols;
   int nrows;
@@ -47,7 +45,8 @@ public:
   void update(int coli, int rowi);
   void update(double x, double y);
   template <class T, class UnaryFunc>
-  void for_each_neighbor(int colc, int rowc, const T &vec, UnaryFunc f) const;
+  void for_each_neighbor(int colc, int rowc, const std::vector<T> &vec,
+                         UnaryFunc f) const;
 
 
   std::vector<std::list<int>> tag;
@@ -79,15 +78,40 @@ inline void Cell::update(double x, double y) {
 }
 
 template <class T, class UnaryFunc>
-void Cell::for_each_neighbor(int colc, int rowc, const T &vec, UnaryFunc f) const {
+void Cell::for_each_neighbor(int colc, int rowc, const std::vector<T> &vec,
+                             UnaryFunc f) const {
   for (int row = rowc - 1; row <= rowc + 1; row++) {
     int tmp = row * ncols;
     for (int col = colc - 1; col <= colc + 1; col++) {
       int idx = col + tmp;
       for (auto iter = tag[idx].cbegin(); iter != tag[idx].cend(); ++iter) {
-        f(vec[*iter].vertex);
+        f(vec[*iter]);
       }
     }
+  }
+}
+
+template <typename T>
+void show_grid(T *grid, int n) {
+  for (int row = 0; row < n; row++) {
+    for (int col = 0; col < n; col++) {
+      int idx = col + row * n;
+      cout << grid[idx] << " ";
+    }
+    cout << endl;
+  }
+}
+
+template <typename T>
+void show_grid(T *grid, int n, int m) {
+  int col_c = n % 2 == 0 ? n / 2 : (n - 1) / 2;
+  int row_c = col_c;
+  for (int row = row_c - m; row <= row_c + m; row++) {
+    for (int col = col_c - m; col <= col_c + m; col++) {
+      int idx = col + row * n;
+      cout << grid[idx] << " ";
+    }
+    cout << endl;
   }
 }
 

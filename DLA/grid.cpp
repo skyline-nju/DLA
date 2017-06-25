@@ -26,35 +26,16 @@ void set_vicinity(int *grid, int m) {
   }
 }
 
-void show_grid(int *grid, int n) {
-  for (int row = 0; row < n; row++) {
-    for (int col = 0; col < n; col++) {
-      int idx = col + row * n;
-      cout << grid[idx] << " ";
-    }
-    cout << endl;
-  }
-}
-
-void show_grid(int *grid, int n, int m) {
-  int col_c = n % 2 == 0 ? n / 2 : (n - 1) / 2;
-  int row_c = col_c;
-  for (int row = row_c - m; row <= row_c + m; row++) {
-    for (int col = col_c - m; col <= col_c + m; col++) {
-      int idx = col + row * n;
-      cout << grid[idx] << " ";
-    }
-    cout << endl;
-  }
-}
 Grid::Grid(int n, int dmax): ncols(n), nrows(n), Dmax(dmax) {
   cluster = new int[n * n];
   cluster_size = 0;
-  dis = new int[n * n];
+  dis = new unsigned char[n * n];
   vicinity = new int[(2 * Dmax + 1) * (2 * Dmax + 1)];
+  cout << sizeof(cluster[0]) * n * n  / 1024 / 1024<< endl;
+  cout << sizeof(dis[0]) * n * n / 1024 / 1024 << endl;
   set_vicinity(vicinity, Dmax);
   for (int i = 0; i < ncols * nrows; i++) {
-    cluster[i] = 0;
+    cluster[i] = -1;
     dis[i] = Dmax;
   }
   int col0, row0;
@@ -80,7 +61,7 @@ void Grid::update(int coli, int rowi) {
   int idxi = coli + rowi * ncols;
   cluster_size++;
   //cout << "[" << coli << ", " << rowi << "] = " << cluster_size << endl;
-  cluster[idxi] = cluster_size;
+  cluster[idxi] = cluster_size - 1;
 
   int k = 0;
   for (int row = rowi - Dmax; row <= rowi + Dmax; row++) {
