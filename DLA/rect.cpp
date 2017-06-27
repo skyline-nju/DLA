@@ -9,7 +9,7 @@ double Rect::b = 1;
 double Rect::La = 2 * Rect::a;
 double Rect::Lb = 2 * Rect::b;
 double Rect::Rab = sqrt(Rect::a * Rect::a + Rect::b * Rect::b);
-
+double tilt_angle = 4 * PI / 180;
 void TranStatus::update(double d, bool vertex_to_edge,
   int contact_vertex, int contact_edge, int tag) {
   if (d <= l_hit) {
@@ -34,7 +34,6 @@ Rect::Rect(double xc, double yc, double ux, double uy, int tag0):
            center(xc, yc), orient(ux, uy), tag(tag0) {
   cal_vertex();
 }
-
 
 void Rect::collide_longitudinal(int idx0, const Vec2<double>& u,
                                 const Rect &rect, TranStatus &status) const {
@@ -134,7 +133,9 @@ void Rect::translate(const std::vector<Rect>& cluster, const Cell & cell,
     collided = true;
   center += u * status.l_hit;
   cal_vertex();
-  show_contact(status, fout2, fout3, vertex, cluster);
+  //show_contact(status, fout2, fout3, vertex, cluster);
+  //rotate_around_contact_pnt(cluster, cell, status);
+  tilt(cluster, cell, status, tilt_angle);
 }
 
 void Rect::rotate(const std::vector<Rect>& cluster, const Cell &cell,
@@ -165,7 +166,34 @@ void Rect::rotate(const std::vector<Rect>& cluster, const Cell &cell,
   if (CW) theta = -theta;
   orient.rotate(theta);
   cal_vertex();
-  show_contact(status, fout2, fout3, vertex, cluster);
+  //show_contact(status, fout2, fout3, vertex, cluster);
+  //rotate_around_contact_pnt(cluster, cell, status);
+  tilt(cluster, cell, status, tilt_angle);
+
+}
+
+void Rect::rotate_around(const vector<Rect>& cluster, const Cell & cell,
+                         int idx_exc, const Vec2<double>& contact_point,
+                         double angle, bool &blocked) {
+  bool CW = angle < 0 ? true : false;
+  RotStatus status(abs(angle));
+  vector<Vector2D> point_set;
+  vector<Segment> line_set;
+  get_line_set_B(contact_point, vertex, 4, point_set, line_set, !CW);
+  auto lambda = [&](const Rect &rect) {
+    get_min_angle(contact_point, point_set, line_set,
+                  rect.vertex, 4, CW, status);
+  };
+  int col0 = cell.get_col(center.x);
+  int row0 = cell.get_row(center.y);
+  cell.for_each_neighbor(col0, row0, idx_exc, cluster, lambda);
+  double theta = acos(status.cos_angle);
+  blocked = theta < abs(angle) ? true : false;
+  if (CW)
+    theta = -theta;
+  center = (center - contact_point).get_rotated_vec(theta) + contact_point;
+  orient.rotate(theta);
+  cal_vertex();
 }
 
 void Rect::output(const vector<Rect> &rect, const char *filename) {

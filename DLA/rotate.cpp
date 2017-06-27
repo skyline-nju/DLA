@@ -120,9 +120,11 @@ void get_increase_segment_set(const Vec2<double>& O,
   }
 }
 
-void get_segment_set(const Vec2<double> &O, const Vec2<double> *vertex, int n,
-                     vector<Vector2D> &point_set,
-                     vector<Segment> &line_set, bool CW) {
+// Caution: func get_line_set_B is for rectangle B. If applying for rectangle A,
+// the flag CW should be reversed.
+void get_line_set_B(const Vec2<double> &O, const Vec2<double> *vertex, int n,
+                    vector<Vector2D> &point_set,
+                    vector<Segment> &line_set, bool CW) {
   point_set.reserve(2 * n);
   line_set.reserve(n);
   if (CW) {
@@ -136,12 +138,11 @@ void get_segment_set(const Vec2<double> &O, const Vec2<double> *vertex, int n,
       get_decrease_segment_set(O, vertex[i], vertex[j], point_set, line_set);
     }
   }
-
 }
 
-void get_segment_set(const Vec2<double> &O, const Vec2<double> *vertex, int n,
-                     vector<Vector2D>& point_set, vector<Segment>& line_set, 
-                     vector<int>& point_idx, vector<int>& line_idx, bool CW) {
+void get_line_set_B(const Vec2<double> &O, const Vec2<double> *vertex, int n,
+                    vector<Vector2D>& point_set, vector<Segment>& line_set, 
+                    vector<int>& point_idx, vector<int>& line_idx, bool CW) {
   point_set.reserve(n);
   line_set.reserve(n);
   point_idx.reserve(n);
@@ -179,7 +180,6 @@ void rotate_contact(const Vector2D &OP, const Segment &MN, bool CW,
       double cos_angle = vOQ.dot(OP.vec) / rr;
       if (cos_angle >= status.cos_angle) {
         status.cos_angle = cos_angle;
-        //status.contact_point = vOQ;
         status.flag = true;
       }
     }
@@ -245,9 +245,9 @@ void get_min_angle(const Vec2<double> &O, const vector<Vector2D> &point_set_A,
                    RotStatus &status) {
   vector<Vector2D> point_set_B;
   vector<Segment> line_set_B;
-  get_segment_set(O, B, nB, point_set_B, line_set_B, CW);
-  for_each_pair(point_set_A, line_set_B, CW, status);
+  get_line_set_B(O, B, nB, point_set_B, line_set_B, CW);
   for_each_pair(point_set_B, line_set_A, !CW, status);
+  for_each_pair(point_set_A, line_set_B, CW, status);
 }
 
 void get_min_angle(const vector<Vector2D>& point_set_A,
@@ -260,7 +260,7 @@ void get_min_angle(const vector<Vector2D>& point_set_A,
   vector<Segment> line_set_B;
   vector<int> point_idx_B;
   vector<int> line_idx_B;
-  get_segment_set(O, B, nB, point_set_B, line_set_B, point_idx_B, line_idx_B, CW);
+  get_line_set_B(O, B, nB, point_set_B, line_set_B, point_idx_B, line_idx_B, CW);
   for_each_pair(point_set_A, line_set_B, point_idx_A, line_idx_B,
                 CW, true, neighbor, status);
   for_each_pair(point_set_B, line_set_A, point_idx_B, line_idx_A,

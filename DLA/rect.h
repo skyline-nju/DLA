@@ -35,6 +35,16 @@ struct Rect
                  double lm, int idx0, bool &collided);
   void rotate(const std::vector<Rect> &cluster, const Cell &cell, 
               double theta_m, bool clockwise, bool &collided);
+  void rotate_around(const std::vector<Rect> &cluster,const Cell &cell,
+                     int idx_exc, const Vec2<double> &contact_point,
+                     double angle, bool &blocked);
+  template <typename T>
+  void rotate_around_contact_pnt(const std::vector<Rect> &cluster,
+                                 const Cell &cell,
+                                 const T& contact_status);
+  template <typename T>
+  void tilt(const std::vector<Rect> &cluster, const Cell &cell,
+            const T& contact_status, double tilting_angle);
   void get_segment_set(bool CW, std::vector<Vector2D> &my_point_set,
                        std::vector<Segment> &my_segment_set) const;
   void get_segment_set(bool CW, std::vector<Vector2D>& my_point_set,
@@ -92,4 +102,85 @@ void show_contact(const T &status, std::ofstream &fout1,
     }
   }
 }
+
+template<typename T>
+void Rect::rotate_around_contact_pnt(const std::vector<Rect>& cluster,
+                                     const Cell & cell,
+                                     const T & contact_status) {
+  if (contact_status.flag) {
+    double angle_CW, angle_CCW;
+    Vec2<double> u1;
+    Vec2<double> normal;
+    int neighbor = contact_status.neighbor_tag;
+    Vec2<double> contact_point;
+    int iv = contact_status.idx_vertex;
+    int ie = contact_status.idx_edge;
+    if (contact_status.vertex_edge) {
+      get_mov_dir(iv, u1);
+      cluster[neighbor].get_mov_dir(ie, normal);
+      contact_point = vertex[iv];
+      Vec2<double> u2(-u1.y, u1.x);
+      angle_CW = acos(-u1.dot(normal));
+      angle_CCW = acos(u2.dot(normal));
+    } else {
+      cluster[neighbor].get_mov_dir(iv, u1);
+      get_mov_dir(ie, normal);
+      contact_point = cluster[neighbor].vertex[iv];
+      Vec2<double> u2(-u1.y, u1.x);
+      angle_CCW = acos(-u1.dot(normal));
+      angle_CW = acos(u2.dot(normal));
+    }
+    bool flag_contact;
+    rotate_around(cluster, cell, neighbor, contact_point, angle_CCW, flag_contact);
+  }
+}
+
+template<typename T>
+inline void Rect::tilt(const std::vector<Rect>& cluster, const Cell & cell,
+                       const T & contact_status, double tilting_angle) {
+  if (contact_status.flag && (contact_status.idx_edge == 1 || contact_status.idx_edge == 3)) {
+    int iv = contact_status.idx_vertex;
+    int ie = contact_status.idx_edge;
+    int neighbor = contact_status.neighbor_tag;
+    Vec2<double> contact_point;
+    Vec2<double> e1;
+    Vec2<double> e2;
+    if (contact_status.vertex_edge) {
+      get_mov_dir(iv, e1);
+      cluster[neighbor].get_mov_dir((ie + 1) % 4, e2);
+      contact_point = vertex[iv];
+      double angle0 = acos(-e1.dot(e2));
+      bool flag_blocked;
+      if (iv == 0 || iv == 2) {
+        double d_theta = angle0 - tilting_angle;
+        rotate_around(cluster, cell, neighbor, contact_point, d_theta, flag_blocked);
+      } else {
+        double d_theta = angle0 - 0.5 * PI;
+        rotate_around(cluster, cell, neighbor, contact_point, d_theta, flag_blocked);
+        if (!flag_blocked) {
+          contact_point = cluster[neighbor].vertex[ie];
+          rotate_around(cluster, cell, neighbor, contact_point, -tilting_angle, flag_blocked);
+        }
+      }
+    } else {
+      cluster[neighbor].get_mov_dir(iv, e1);
+      get_mov_dir((ie + 1) % 4, e2);
+      contact_point = cluster[neighbor].vertex[iv];
+      double angle0 = acos(-e1.dot(e2));
+      bool flag_blocked;
+      if (iv == 0 || iv == 2) {
+        rotate_around(cluster, cell, neighbor, contact_point, -angle0, flag_blocked);
+        if (!flag_blocked) {
+          contact_point = vertex[(ie+1) % 4];
+          rotate_around(cluster, cell, neighbor, contact_point, -tilting_angle, flag_blocked);
+        }
+
+      } else {
+        double d_theta = 0.5 * PI - angle0 - tilting_angle;
+        rotate_around(cluster, cell, neighbor, contact_point, d_theta, flag_blocked);
+      }
+    }
+  }
+}
+
 #endif

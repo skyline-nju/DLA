@@ -65,6 +65,10 @@ void get_increase_segment_set(const Vec2<double> &O,
 void rotate_contact(const Vector2D &OP, const Segment &MN,
                     bool CW, RotStatus &status);
 
+void get_line_set_B(const Vec2<double> &O, const Vec2<double> *vertex, int n,
+                    std::vector<Vector2D> &point_set,
+                    std::vector<Segment> &line_set, bool CW);
+
 void get_min_angle(const Vec2<double> &O,
                    const std::vector<Vector2D> &point_set_A,
                    const std::vector<Segment> &line_set_A,

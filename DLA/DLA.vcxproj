@@ -149,7 +149,6 @@
     <ClCompile Include="run.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="cmdline.h" />
     <ClInclude Include="comn.h" />
     <ClInclude Include="disk.h" />
     <ClInclude Include="grid.h" />

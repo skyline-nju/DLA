@@ -22,8 +22,8 @@ struct Vec2
   Vec2<T> operator +(const Vec2<T2> &a) const { return Vec2<T>(x + a.x, y + a.y); }
   template <typename T2>
   Vec2<T> operator +(T2 a) const { return Vec2<T>(x + a, y + a); }
-  template <typename T2, typename T3>
-  friend Vec2<T> operator +(T2 a, const Vec2<T3> &b) { return Vec2<T>(a + b.x, a + b.y); }
+  template <typename T2>
+  friend Vec2<T> operator +(T a, const Vec2<T2> &b) { return Vec2<T2>(a + b.x, a + b.y); }
 
   template <typename T2>
   Vec2<T> operator -(const Vec2<T2> &a) const { return Vec2<T>(x - a.x, y - a.y); }
@@ -66,6 +66,7 @@ struct Vec2
   double square() const { return x * x + y * y; }
   double module() const { return sqrt(x * x + y * y); }
   void rotate(double theta);
+  Vec2<T> get_rotated_vec(double theta) const;
 
   friend std::ostream& operator <<(std::ostream &output, const Vec2<T> &a) {
     output << a.x << "\t" << a.y;
@@ -91,4 +92,12 @@ inline void Vec2<T>::rotate(double theta) {
   y = v;
 }
 
+template <class T>
+inline  Vec2<T> Vec2<T>::get_rotated_vec(double theta) const {
+  double cos_theta = cos(theta);
+  double sin_theta = sin(theta);
+  double u = x * cos_theta - y * sin_theta;
+  double v = x * sin_theta + y * cos_theta;
+  return Vec2<T>(u, v);
+}
 #endif

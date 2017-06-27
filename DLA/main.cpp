@@ -20,8 +20,8 @@ int main(int argc, char *argv[]) {
   int N = 100;
   vector<Rect> rect;
   rect.reserve(N);
-  Ran myran(9);
-  Cell cell(500, ceil(2 * Rect::Rab) + 1);
+  Ran myran(10);
+  Cell cell(1000, ceil(2 * Rect::Rab) + 1);
   run(rect, N, cell, &myran);
   //run(rect, N, &myran);
   Rect::output(rect);

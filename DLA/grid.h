@@ -47,7 +47,9 @@ public:
   template <class T, class UnaryFunc>
   void for_each_neighbor(int colc, int rowc, const std::vector<T> &vec,
                          UnaryFunc f) const;
-
+  template <class T, class UnaryFunc>
+  void for_each_neighbor(int colc, int rowc, int idx_exclude,
+                         const std::vector<T> &vec, UnaryFunc f) const;
 
   std::vector<std::list<int>> tag;
   std::vector<bool> isolate;
@@ -86,6 +88,23 @@ void Cell::for_each_neighbor(int colc, int rowc, const std::vector<T> &vec,
       int idx = col + tmp;
       for (auto iter = tag[idx].cbegin(); iter != tag[idx].cend(); ++iter) {
         f(vec[*iter]);
+      }
+    }
+  }
+}
+
+template<class T, class UnaryFunc>
+void Cell::for_each_neighbor(int colc, int rowc, int idx_exclude,
+                                          const std::vector<T>& vec,
+                                          UnaryFunc f) const {
+  for (int row = rowc - 1; row <= rowc + 1; row++) {
+    int tmp = row * ncols;
+    for (int col = colc - 1; col <= colc + 1; col++) {
+      int idx = col + tmp;
+      for (auto iter = tag[idx].cbegin(); iter != tag[idx].cend(); ++iter) {
+        if (*iter != idx_exclude) {
+          f(vec[*iter]);
+        }
       }
     }
   }
