@@ -10,7 +10,9 @@ double Rmax = 0;
 double Rmax2 = 0;
 double R_release = Rmax + 18;
 double Rkill = R_release * 4;
-double theta_m = PI / 72;
+double alpha = 7;
+double theta_m = 6 / 49.0 * log(0.5 * alpha) / log(alpha);
+// Da / Dr = 6 / La * La * log(alpha / 2) / log(alpha)
 
 void launch(Disk &p, Ran *myran) {
   double theta = myran->doub() * 2.0 * PI;
@@ -78,7 +80,7 @@ void launch(Rect &p, Ran *myran) {
 }
 
 
-bool one_step(Rect &p, vector<Rect> &cluster, Cell &cell, Ran *myran) {
+bool one_step(Rect &p, vector<Rect> &cluster, Cell<Rect> &cell, Ran *myran) {
   int idx0 = int(myran->doub() * 6);
   bool collided = false;
   if (idx0 == 0 || idx0 == 2) {
@@ -93,17 +95,19 @@ bool one_step(Rect &p, vector<Rect> &cluster, Cell &cell, Ran *myran) {
   return collided;
 }
 
-void run(std::vector<Rect>& cluster, int nPar, Cell & cell, Ran * myran) {
+void run(vector<Rect>& cluster, int nPar, Cell<Rect> & cell, Ran * myran, 
+         ofstream &fout) {
   cluster.push_back(Rect(0, 0, 0, 0));
-  cell.update(cluster[0].center.x, cluster[0].center.y);
+  cell.update(&cluster[0]);
   cout << "initialized" << endl;
   while (cluster.size() < nPar) {
     Rect p0(cluster.size());
     launch(p0, myran);
     while (true) {
       if (one_step(p0, cluster, cell, myran)) {
-        cell.update(p0.center.x, p0.center.y);
         cluster.push_back(p0);
+        cell.update(&cluster[cluster.size() - 1]);
+        p0.output(fout);
         cout << "n = " << cluster.size() << endl;
         double rr = p0.center.square();
         if (rr > Rmax2) {
@@ -118,5 +122,16 @@ void run(std::vector<Rect>& cluster, int nPar, Cell & cell, Ran * myran) {
       }
     }
   }
+}
+
+void run(vector<Rect>& cluster, int nPar, Cell<Rect> & cell, int seed,
+         double tilt_theta) {
+  char filename[100];
+  snprintf(filename, 100, "%d_%g_%d.dat", nPar, tilt_theta, seed);
+  Rect::output(cluster, filename);
+  ofstream fout(filename);
+  Rect::tilt_angle = tilt_theta / 180 * PI;
+  Ran myran(seed);
+  run(cluster, nPar, cell, &myran, fout);
 }
 

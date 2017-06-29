@@ -17,12 +17,10 @@ int main(int argc, char *argv[]) {
   //cal_fractal_dim(cluster);
   //Disk::output_xyz(cluster);
 
-  int N = 100;
+  int N = atoi(argv[1]);
   vector<Rect> rect;
   rect.reserve(N);
-  Ran myran(10);
-  Cell cell(1000, ceil(2 * Rect::Rab) + 1);
-  run(rect, N, cell, &myran);
-  //run(rect, N, &myran);
-  Rect::output(rect);
+  Cell<Rect> cell(atoi(argv[2]), ceil(2 * Rect::Rab) + 1);
+  int seed = atoi(argv[3]);
+  run(rect, N, cell, seed, atof(argv[4]));
 }                        

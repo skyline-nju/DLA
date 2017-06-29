@@ -21,8 +21,8 @@ struct TranStatus
 
 struct Rect
 {
-  Rect() {}
-  Rect(int tag0): tag(tag0) {}
+  Rect(): next(NULL) {}
+  Rect(int tag0): tag(tag0), next(NULL) {}
   Rect(double xc, double yc, double theta, int tag0);
   Rect(double xc, double yc, double ux, double uy, int tag0);
   void cal_vertex();
@@ -31,19 +31,19 @@ struct Rect
                             TranStatus &status) const;
   void collide_transverse(int idx0, const Vec2<double> &u, const Rect &rect,
                           TranStatus &status) const;
-  void translate(const std::vector<Rect> &cluster, const Cell &cell,
+  void translate(const std::vector<Rect> &cluster, const Cell<Rect> &cell,
                  double lm, int idx0, bool &collided);
-  void rotate(const std::vector<Rect> &cluster, const Cell &cell, 
+  void rotate(const std::vector<Rect> &cluster, const Cell<Rect> &cell, 
               double theta_m, bool clockwise, bool &collided);
-  void rotate_around(const std::vector<Rect> &cluster,const Cell &cell,
+  void rotate_around(const std::vector<Rect> &cluster,const Cell<Rect> &cell,
                      int idx_exc, const Vec2<double> &contact_point,
                      double angle, bool &blocked);
   template <typename T>
   void rotate_around_contact_pnt(const std::vector<Rect> &cluster,
-                                 const Cell &cell,
+                                 const Cell<Rect> &cell,
                                  const T& contact_status);
   template <typename T>
-  void tilt(const std::vector<Rect> &cluster, const Cell &cell,
+  void tilt(const std::vector<Rect> &cluster, const Cell<Rect> &cell,
             const T& contact_status, double tilting_angle);
   void get_segment_set(bool CW, std::vector<Vector2D> &my_point_set,
                        std::vector<Segment> &my_segment_set) const;
@@ -52,6 +52,7 @@ struct Rect
                        std::vector<int>& my_point_idx,
                        std::vector<int>& my_segment_idx);
   void shift(const Vec2<double> &delta);
+  void output(std::ofstream &out);
   static void output(const std::vector<Rect> &rect);
   static void output(const std::vector<Rect> &rect, const char *f);
 
@@ -59,12 +60,14 @@ struct Rect
   Vec2<double> center;
   Vec2<double> orient;
   Vec2<double> vertex[4];
+  Rect *next;
 
   static double a;
   static double b;
   static double La;
   static double Lb;
   static double Rab;
+  static double tilt_angle;
 };
 
 inline void Rect::cal_vertex() {
@@ -105,7 +108,7 @@ void show_contact(const T &status, std::ofstream &fout1,
 
 template<typename T>
 void Rect::rotate_around_contact_pnt(const std::vector<Rect>& cluster,
-                                     const Cell & cell,
+                                     const Cell<Rect> & cell,
                                      const T & contact_status) {
   if (contact_status.flag) {
     double angle_CW, angle_CCW;
@@ -136,8 +139,8 @@ void Rect::rotate_around_contact_pnt(const std::vector<Rect>& cluster,
 }
 
 template<typename T>
-inline void Rect::tilt(const std::vector<Rect>& cluster, const Cell & cell,
-                       const T & contact_status, double tilting_angle) {
+void Rect::tilt(const std::vector<Rect>& cluster, const Cell<Rect> & cell,
+                const T & contact_status, double tilting_angle) {
   if (contact_status.flag && (contact_status.idx_edge == 1 || contact_status.idx_edge == 3)) {
     int iv = contact_status.idx_vertex;
     int ie = contact_status.idx_edge;
@@ -149,7 +152,10 @@ inline void Rect::tilt(const std::vector<Rect>& cluster, const Cell & cell,
       get_mov_dir(iv, e1);
       cluster[neighbor].get_mov_dir((ie + 1) % 4, e2);
       contact_point = vertex[iv];
-      double angle0 = acos(-e1.dot(e2));
+      double cos_angle = -e1.dot(e2);
+      if (cos_angle > 1)
+        cos_angle = 1;
+      double angle0 = acos(cos_angle);
       bool flag_blocked;
       if (iv == 0 || iv == 2) {
         double d_theta = angle0 - tilting_angle;
@@ -166,7 +172,10 @@ inline void Rect::tilt(const std::vector<Rect>& cluster, const Cell & cell,
       cluster[neighbor].get_mov_dir(iv, e1);
       get_mov_dir((ie + 1) % 4, e2);
       contact_point = cluster[neighbor].vertex[iv];
-      double angle0 = acos(-e1.dot(e2));
+      double cos_angle = -e1.dot(e2);
+      if (cos_angle > 1)
+        cos_angle = 1;
+      double angle0 = acos(cos_angle);
       bool flag_blocked;
       if (iv == 0 || iv == 2) {
         rotate_around(cluster, cell, neighbor, contact_point, -angle0, flag_blocked);

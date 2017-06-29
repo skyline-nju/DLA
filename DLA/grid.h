@@ -1,7 +1,8 @@
 #ifndef GRID_H
 #define GRID_H
-#include <list>
 #include <vector>
+#include <iostream>
+#include <cmath>
 
 class Grid
 {
@@ -32,6 +33,7 @@ inline void Grid::update(double x, double y) {
   update(int(x - x_left), int(y - y_lower));
 }
 
+template <typename T>
 class Cell
 {
 public:
@@ -40,19 +42,17 @@ public:
   int get_row(double y) const { return int((y - y_lower) * one_over_l); }
   int get_idx(int col, int row) const { return col + ncols * row; }
   int get_idx(double x, double y) const;
-  bool is_isolate(int col, int row) const;
+  bool out_of_range(int col, int row) const;
+  bool is_isolate(int col, int row) const { return isolate[get_idx(col, row)]; }
   bool is_isolate(double x, double y) const;
-  void update(int coli, int rowi);
-  void update(double x, double y);
-  template <class T, class UnaryFunc>
-  void for_each_neighbor(int colc, int rowc, const std::vector<T> &vec,
-                         UnaryFunc f) const;
-  template <class T, class UnaryFunc>
-  void for_each_neighbor(int colc, int rowc, int idx_exclude,
-                         const std::vector<T> &vec, UnaryFunc f) const;
+  void update(T *p);
+  template <class UnaryFunc>
+  void for_each_neighbor(int colc, int rowc, UnaryFunc f) const;
+  template <class UnaryFunc>
+  void for_each_neighbor(int colc, int rowc, int idx_exclude, UnaryFunc f) const;
 
-  std::vector<std::list<int>> tag;
-  std::vector<bool> isolate;
+  std::vector<T *> cell_list;
+  bool *isolate;
   int ncols;
   int nrows;
   int ncell;
@@ -63,48 +63,97 @@ public:
   double one_over_l;
 };
 
-inline int Cell::get_idx(double x, double y) const {
+template <typename T>
+Cell<T>::Cell(int n, double l0) : ncols(n), nrows(n), l(l0), ncell(n*n) {
+  cell_list.reserve(ncell);
+  isolate = new bool[ncell];
+  for (int i = 0; i < ncell; i++) {
+    T* p = NULL;
+    cell_list.push_back(p);
+    isolate[i] = true;
+  }
+  int col0, row0;
+  if (n % 2 == 0) {
+    col0 = row0 = n / 2;
+    x_left = y_lower = (-n / 2) * l;
+  } else {
+    col0 = row0 = (n - 1) / 2;
+    x_left = y_lower = -(n - 1) / 2 * l;
+  }
+  particle_num = 0;
+  one_over_l = 1 / l;
+  std::cout << "xl = " << x_left << std::endl;
+  std::cout << "yl = " << y_lower << std::endl;
+  std::cout << "l = " << l << "\t1/l = " << one_over_l << std::endl;
+  std::cout << "ncols = " << ncols << std::endl;
+}
+
+template <class T>
+void Cell<T>::update(T *p) {
+  int coli = get_col(p->center.x);
+  int rowi = get_row(p->center.y);
+  int idx = get_idx(coli, rowi);
+  for (int row = rowi - 1; row <= rowi + 1; row++) {
+    int tmp = row * ncols;
+    for (int col = coli - 1; col <= coli + 1; col++) {
+      isolate[col + tmp] = false;
+    }
+  }
+  p->next = cell_list[idx];
+  cell_list[idx] = p;
+  particle_num++;
+}
+
+template <typename T>
+inline int Cell<T>::get_idx(double x, double y) const {
   return get_col(x) + ncols * get_row(y);
 }
 
-inline bool Cell::is_isolate(int col, int row) const {
-  return isolate[col + ncols * row];
+template <typename T>
+inline bool Cell<T>::out_of_range(int col, int row) const {
+  return col < 0 || col >= ncols || row < 0 || row >= nrows;
 }
 
-inline bool Cell::is_isolate(double x, double y) const {
-  return isolate[get_idx(x, y)];
+template <typename T>
+inline bool Cell<T>::is_isolate(double x, double y) const {
+  int col = get_col(x);
+  int row = get_row(y);
+  return is_isolate(col, row);
 }
 
-inline void Cell::update(double x, double y) {
-  update(get_col(x), get_row(y));
-}
-
-template <class T, class UnaryFunc>
-void Cell::for_each_neighbor(int colc, int rowc, const std::vector<T> &vec,
-                             UnaryFunc f) const {
+template <class T>
+template <class UnaryFunc>
+void Cell<T>::for_each_neighbor(int colc, int rowc, UnaryFunc f) const {
   for (int row = rowc - 1; row <= rowc + 1; row++) {
     int tmp = row * ncols;
     for (int col = colc - 1; col <= colc + 1; col++) {
       int idx = col + tmp;
-      for (auto iter = tag[idx].cbegin(); iter != tag[idx].cend(); ++iter) {
-        f(vec[*iter]);
+      if (cell_list[idx]) {
+        T* curNode = cell_list[idx];
+        do {
+          f(*curNode);
+          curNode = curNode->next;
+        } while (curNode);
       }
     }
   }
 }
 
-template<class T, class UnaryFunc>
-void Cell::for_each_neighbor(int colc, int rowc, int idx_exclude,
-                                          const std::vector<T>& vec,
-                                          UnaryFunc f) const {
+template <class T>
+template<class UnaryFunc>
+void Cell<T>::for_each_neighbor(int colc, int rowc, int idx_exclude,
+                                UnaryFunc f) const {
   for (int row = rowc - 1; row <= rowc + 1; row++) {
     int tmp = row * ncols;
     for (int col = colc - 1; col <= colc + 1; col++) {
       int idx = col + tmp;
-      for (auto iter = tag[idx].cbegin(); iter != tag[idx].cend(); ++iter) {
-        if (*iter != idx_exclude) {
-          f(vec[*iter]);
-        }
+      if (cell_list[idx]) {
+        T* curNode = cell_list[idx];
+        do {
+          if (curNode->tag != idx_exclude)
+            f(*curNode);
+          curNode = curNode->next;
+        } while (curNode);
       }
     }
   }
@@ -115,9 +164,9 @@ void show_grid(T *grid, int n) {
   for (int row = 0; row < n; row++) {
     for (int col = 0; col < n; col++) {
       int idx = col + row * n;
-      cout << grid[idx] << " ";
+      std::cout << grid[idx] << " ";
     }
-    cout << endl;
+    std::cout << "\n";
   }
 }
 
@@ -128,9 +177,9 @@ void show_grid(T *grid, int n, int m) {
   for (int row = row_c - m; row <= row_c + m; row++) {
     for (int col = col_c - m; col <= col_c + m; col++) {
       int idx = col + row * n;
-      cout << grid[idx] << " ";
+      std::cout << grid[idx] << " ";
     }
-    cout << endl;
+    std::cout << "\n";
   }
 }
 

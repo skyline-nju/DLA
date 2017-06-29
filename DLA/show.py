@@ -1,6 +1,14 @@
+import os
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
+import matplotlib
+import platform
+if platform.system() == "Windows":
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as patches
+else:
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as patches
 
 
 def show_disk(file):
@@ -30,7 +38,7 @@ def show_disk(file):
     plt.close()
 
 
-def show_rect(file, a, b, ax=None, fill=False):
+def read(file):
     with open(file) as f:
         lines = f.readlines()
         x = np.zeros(len(lines))
@@ -41,6 +49,11 @@ def show_rect(file, a, b, ax=None, fill=False):
             x[i] = float(s[1])
             y[i] = float(s[2])
             theta[i] = float(s[3])
+    return x, y, theta
+
+
+def show_rect(file, a, b, ax=None, fill=False):
+    x, y, theta = read(file)
     if ax is None:
         flag_show = True
         ax = plt.subplot(111)
@@ -65,28 +78,38 @@ def show_rect(file, a, b, ax=None, fill=False):
         plt.close()
 
 
-if __name__ == "__main__":
-    # ax = plt.subplot(111)
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6, 6))
-    show_rect("rect_100.dat", 14, 2, ax)
-    # show_rect("traj.dat", 14, 2, ax, fill=False)
-    x = []
-    y = []
-    with open("vertex.txt") as f:
-        lines = f.readlines()
-        for line in lines:
-            s = line.replace("\n", "").split("\t")
-            x.append(float(s[0]))
-            y.append(float(s[1]))
-    ax.plot(x, y, "o")
-    with open("edge.txt") as f:
-        lines = f.readlines()
-        for line in lines:
-            s = line.replace("\n", "").split("\t")
-            x = [float(s[0]), float(s[2])]
-            y = [float(s[1]), float(s[3])]
-            ax.plot(x, y, "r")
-
-    plt.tight_layout()
+def cal_fracal_dimension(file):
+    x, y, theta = read(file)
+    r = np.sqrt(x * x + y * y)
+    rmax = r.max()
+    print(rmax)
+    rbins = np.logspace(0, np.log2(rmax), 50, base=2)
+    bins = np.zeros(rbins.size + 1)
+    bins[0] = 0
+    bins[1:] = rbins
+    hist, bin_edge = np.histogram(r, bins=bins)
+    mass = np.zeros_like(rbins)
+    mass[0] = hist[0]
+    for i in range(1, mass.size):
+        mass[i] = mass[i-1] + hist[i]
+    plt.loglog(rbins, mass, "-o")
     plt.show()
     plt.close()
+    for i in range(mass.size):
+        print(rbins[i], mass[i])
+
+
+if __name__ == "__main__":
+    if platform.system() is "Windows":
+        os.chdir("data")
+    file = "100000_2_2.dat"
+    # fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6, 6))
+    # show_rect(file, 14, 2, ax, fill=True)
+
+    # plt.tight_layout()
+    # if sys.platform == "Windows":
+    #     plt.show()
+    # else:
+    #     plt.savefig(file.replace(".dat", ".png"))
+    # plt.close()
+    cal_fracal_dimension(file)

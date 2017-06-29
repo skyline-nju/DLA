@@ -1,15 +1,14 @@
 #include "rect.h"
-
 using namespace std;
-ofstream fout2("vertex.txt");
-ofstream fout3("edge.txt");
+//ofstream fout2("vertex.txt");
+//ofstream fout3("edge.txt");
 
 double Rect::a = 7;
 double Rect::b = 1;
 double Rect::La = 2 * Rect::a;
 double Rect::Lb = 2 * Rect::b;
 double Rect::Rab = sqrt(Rect::a * Rect::a + Rect::b * Rect::b);
-double tilt_angle = 4 * PI / 180;
+double Rect::tilt_angle = 4 * PI / 180;
 void TranStatus::update(double d, bool vertex_to_edge,
   int contact_vertex, int contact_edge, int tag) {
   if (d <= l_hit) {
@@ -28,11 +27,13 @@ Rect::Rect(double xc, double yc, double theta, int tag0):
   orient.x = cos(angle);
   orient.y = sin(angle);
   cal_vertex();
+  next = NULL;
 }
 
 Rect::Rect(double xc, double yc, double ux, double uy, int tag0):
            center(xc, yc), orient(ux, uy), tag(tag0) {
   cal_vertex();
+  next = NULL;
 }
 
 void Rect::collide_longitudinal(int idx0, const Vec2<double>& u,
@@ -108,7 +109,7 @@ void Rect::collide_transverse(int idx0, const Vec2<double>& u,
   }
 }
 
-void Rect::translate(const std::vector<Rect>& cluster, const Cell & cell,
+void Rect::translate(const std::vector<Rect>& cluster, const Cell<Rect> & cell,
                      double lm, int idx0, bool & collided) {
   collided = false;
   TranStatus status(lm);
@@ -116,35 +117,54 @@ void Rect::translate(const std::vector<Rect>& cluster, const Cell & cell,
   get_mov_dir(idx0, u);
   int my_col = cell.get_col(center.x);
   int my_row = cell.get_row(center.y);
-  if (!cell.is_isolate(my_col, my_row)) {
+  if (cell.out_of_range(my_col, my_row)) {
+    center += u * lm * 4;
+    cal_vertex();
+  } else if (cell.is_isolate(my_col, my_row)) {
+    center += u * lm * 2;
+    cal_vertex();
+  } else {
     if (idx0 == 0 || idx0 == 2) {
       auto lambda = [&, idx0](const Rect &rect) {
         collide_longitudinal(idx0, u, rect, status);
       };
-      cell.for_each_neighbor(my_col, my_row, cluster, lambda);
+      cell.for_each_neighbor(my_col, my_row, lambda);
     } else {
       auto lambda = [&, idx0](const Rect &rect) {
         collide_transverse(idx0, u, rect, status);
       };
-      cell.for_each_neighbor(my_col, my_row, cluster, lambda);
+      cell.for_each_neighbor(my_col, my_row, lambda);
+    }
+    if (status.flag) {
+      //if (status.idx_edge == 1 || status.idx_edge == 3) {
+        collided = true;
+        center += u * status.l_hit;
+        cal_vertex();
+        //tilt(cluster, cell, status, tilt_angle);
+      //}
+    } else {
+      center += u * lm;
+      cal_vertex();
     }
   }
-  if (status.flag)
-    collided = true;
-  center += u * status.l_hit;
-  cal_vertex();
-  //show_contact(status, fout2, fout3, vertex, cluster);
-  //rotate_around_contact_pnt(cluster, cell, status);
-  tilt(cluster, cell, status, tilt_angle);
 }
 
-void Rect::rotate(const std::vector<Rect>& cluster, const Cell &cell,
+void Rect::rotate(const std::vector<Rect>& cluster, const Cell<Rect> &cell,
                   double theta_m, bool CW, bool & collided) {
+  collided = false;
   double theta;
   RotStatus status(theta_m);
   int my_col = cell.get_col(center.x);
   int my_row = cell.get_row(center.y);
-  if (!cell.is_isolate(my_col, my_row)) {
+  if (cell.out_of_range(my_col, my_row)) {
+    theta = CW ? -theta_m : theta_m;
+    orient.rotate(theta * 4);
+    cal_vertex();
+  } else if (cell.is_isolate(my_col, my_row)) {
+    theta = CW ? -theta_m : theta_m;
+    orient.rotate(theta * 2);
+    cal_vertex();
+  } else {
     vector<Vector2D> point_set;
     vector<Segment> segment_set;
     vector<int> point_idx;
@@ -154,25 +174,25 @@ void Rect::rotate(const std::vector<Rect>& cluster, const Cell &cell,
       get_min_angle(point_set, segment_set, point_idx, segment_idx, center,
                     rect.vertex, 4, CW, rect.tag, status);
     };
-    cell.for_each_neighbor(my_col, my_row, cluster, lambda);
+    cell.for_each_neighbor(my_col, my_row, lambda);
+    if (status.flag) {
+      //if (status.idx_edge == 1 || status.idx_edge == 3) {
+        collided = true;
+        theta = acos(status.cos_angle);
+        if (CW) theta = -theta;
+        orient.rotate(theta);
+        cal_vertex();
+        //tilt(cluster, cell, status, tilt_angle);
+      //}
+    } else {
+      theta = CW ? -theta_m : theta_m;
+      orient.rotate(theta);
+      cal_vertex();
+    }
   }
-  if (status.flag) {
-    collided = true;
-    theta = acos(status.cos_angle);
-  } else {
-    collided = false;
-    theta = theta_m;
-  }
-  if (CW) theta = -theta;
-  orient.rotate(theta);
-  cal_vertex();
-  //show_contact(status, fout2, fout3, vertex, cluster);
-  //rotate_around_contact_pnt(cluster, cell, status);
-  tilt(cluster, cell, status, tilt_angle);
-
 }
 
-void Rect::rotate_around(const vector<Rect>& cluster, const Cell & cell,
+void Rect::rotate_around(const vector<Rect>& cluster, const Cell<Rect> & cell,
                          int idx_exc, const Vec2<double>& contact_point,
                          double angle, bool &blocked) {
   bool CW = angle < 0 ? true : false;
@@ -180,13 +200,15 @@ void Rect::rotate_around(const vector<Rect>& cluster, const Cell & cell,
   vector<Vector2D> point_set;
   vector<Segment> line_set;
   get_line_set_B(contact_point, vertex, 4, point_set, line_set, !CW);
-  auto lambda = [&](const Rect &rect) {
+  auto lambda = [&, CW](const Rect &rect) {
     get_min_angle(contact_point, point_set, line_set,
                   rect.vertex, 4, CW, status);
   };
   int col0 = cell.get_col(center.x);
   int row0 = cell.get_row(center.y);
-  cell.for_each_neighbor(col0, row0, idx_exc, cluster, lambda);
+  cell.for_each_neighbor(col0, row0, idx_exc, lambda);
+  if (status.cos_angle > 1)
+    status.cos_angle = 1;
   double theta = acos(status.cos_angle);
   blocked = theta < abs(angle) ? true : false;
   if (CW)
@@ -194,6 +216,13 @@ void Rect::rotate_around(const vector<Rect>& cluster, const Cell & cell,
   center = (center - contact_point).get_rotated_vec(theta) + contact_point;
   orient.rotate(theta);
   cal_vertex();
+}
+
+void Rect::output(ofstream &out) {
+  double x = vertex[3].x;
+  double y = vertex[3].y;
+  double theta = atan2(orient.y, orient.x) / PI * 180;
+  out << tag << "\t" << x << "\t" << y << "\t" << theta << endl;
 }
 
 void Rect::output(const vector<Rect> &rect, const char *filename) {

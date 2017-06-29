@@ -20,27 +20,29 @@ struct Vec2
 
   template <typename T2>
   Vec2<T> operator +(const Vec2<T2> &a) const { return Vec2<T>(x + a.x, y + a.y); }
-  template <typename T2>
-  Vec2<T> operator +(T2 a) const { return Vec2<T>(x + a, y + a); }
-  template <typename T2>
-  friend Vec2<T> operator +(T a, const Vec2<T2> &b) { return Vec2<T2>(a + b.x, a + b.y); }
+  Vec2<T> operator +(double a) const { return Vec2<T>(x + a, y + a); }
+  Vec2<T> operator +(int a) const { return Vec2<T>(x + a, y + a); }
+  friend Vec2<T> operator +(double a, const Vec2<T> &b) { return b + a; }
+  friend Vec2<T> operator +(int a, const Vec2<T> &b) { return b + a; }
 
   template <typename T2>
   Vec2<T> operator -(const Vec2<T2> &a) const { return Vec2<T>(x - a.x, y - a.y); }
-  template <typename T2>
-  Vec2<T> operator -(T2 a) const { return Vec2<T>(x - a, y - a); }
-  template <typename T2, typename T3>
-  friend Vec2<T> operator -(T2 a, const Vec2<T3> &b) { return Vec2<T>(a - b.x, a - b.y); }
+  Vec2<T> operator -(double a) const { return Vec2<T>(x - a, y - a); }
+  Vec2<T> operator -(int a) const { return Vec2<T>(x - a, y - a); }
+  friend Vec2<T> operator -(double a, const Vec2<T> &b) { return b - a; }
+  friend Vec2<T> operator -(int a, const Vec2<T> &b) { return b - a; }
+
 
   template <typename T2>
   Vec2<T> operator *(const Vec2<T2> &a) const { return Vec2<T>(x * a.x, y * a.y); }
-  template <typename T2>
-  Vec2<T> operator *(T2 a) const { return Vec2<T>(x * a, y * a); }
-  template <typename T2, typename T3>
-  friend Vec2<T> operator *(T2 a, const Vec2<T3> &b) { return Vec2<T>(a * b.x, a * b.y); }
+  Vec2<T> operator *(double a) const { return Vec2<T>(x * a, y * a); }
+  Vec2<T> operator *(int a) const { return Vec2<T>(x * a, y * a); }
+  friend Vec2<T> operator *(double a, const Vec2<T> &b) { return b * a; }
+  friend Vec2<T> operator *(int a, const Vec2<T> &b) { return b * a; }
 
-  template <typename T2>
-  Vec2<T> operator /(T2 a) const { return Vec2<T>(x / a, y / a); }
+  Vec2<T> operator /(double a) const { return Vec2<T>(x / a, y / a); }
+  Vec2<T> operator /(int a) const { return Vec2<T>(x / a, y / a); }
+
 
   template <typename T2>
   void operator +=(const Vec2<T2> &a) { x += a.x; y += a.y; }

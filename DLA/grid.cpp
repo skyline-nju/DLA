@@ -1,6 +1,4 @@
 #include "grid.h"
-#include <cmath>
-#include <iostream>
 using namespace std;
 
 void set_vicinity(int *grid, int m) {
@@ -9,8 +7,8 @@ void set_vicinity(int *grid, int m) {
   for (int row = 0; row < nrows; row++) {
     for (int col = 0; col < ncols; col++) {
       int idx = col + row * ncols;
-      int dx = abs(col - m);
-      int dy = abs(row - m);
+      int dx = fabs(col - m);
+      int dy = fabs(row - m);
       if (dx == 0 && dy == 0) {
         grid[idx] = 0;
       } else if (dx == 0) {
@@ -93,37 +91,5 @@ void Grid::show(int m) {
   show_grid(cluster, ncols, m);
 }
 
-Cell::Cell(int n, double l0) : ncols(n), nrows(n), l(l0), ncell(n*n) {
-  tag.reserve(ncell);
-  isolate.reserve(ncell);
-  for (int i = 0; i < ncell; i++) {
-    tag.push_back(list<int>());
-    isolate.push_back(true);
-  }
-  int col0, row0;
-  if (n % 2 == 0) {
-    col0 = row0 = n / 2;
-    x_left = y_lower = (-n / 2) * l;
-  } else {
-    col0 = row0 = (n - 1) / 2;
-    x_left = y_lower = -(n - 1) / 2 * l;
-  }
-  particle_num = 0;
-  one_over_l = 1 / l;
-  cout << "xl = " << x_left << endl;
-  cout << "yl = " << y_lower << endl;
-  cout << "l = " << l << "\t1/l = " << one_over_l << endl;
-  cout << "ncols = " << ncols << endl;
-}
 
-void Cell::update(int coli, int rowi) {
-  int idx = get_idx(coli, rowi);
-  for (int row = rowi - 1; row <= rowi + 1; row++) {
-    int tmp = row * ncols;
-    for (int col = coli - 1; col <= coli + 1; col++) {
-      isolate[col + tmp] = false;
-    }
-  }
-  tag[idx].push_back(particle_num);
-  particle_num++;
-}
+
