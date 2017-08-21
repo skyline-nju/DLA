@@ -12,6 +12,7 @@
 *.dat
 *.xyz
 *.txt
+*.png
 
 # Build results
 [Dd]ebug/

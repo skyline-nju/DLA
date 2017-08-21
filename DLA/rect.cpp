@@ -136,12 +136,12 @@ void Rect::translate(const std::vector<Rect>& cluster, const Cell<Rect> & cell,
       cell.for_each_neighbor(my_col, my_row, lambda);
     }
     if (status.flag) {
-      //if (status.idx_edge == 1 || status.idx_edge == 3) {
+      if (status.idx_edge == 1 || status.idx_edge == 3) {
         collided = true;
         center += u * status.l_hit;
         cal_vertex();
-        //tilt(cluster, cell, status, tilt_angle);
-      //}
+        tilt(cluster, cell, status, tilt_angle);
+      }
     } else {
       center += u * lm;
       cal_vertex();
@@ -176,14 +176,14 @@ void Rect::rotate(const std::vector<Rect>& cluster, const Cell<Rect> &cell,
     };
     cell.for_each_neighbor(my_col, my_row, lambda);
     if (status.flag) {
-      //if (status.idx_edge == 1 || status.idx_edge == 3) {
+      if (status.idx_edge == 1 || status.idx_edge == 3) {
         collided = true;
         theta = acos(status.cos_angle);
         if (CW) theta = -theta;
         orient.rotate(theta);
         cal_vertex();
-        //tilt(cluster, cell, status, tilt_angle);
-      //}
+        tilt(cluster, cell, status, tilt_angle);
+      }
     } else {
       theta = CW ? -theta_m : theta_m;
       orient.rotate(theta);
@@ -324,6 +324,7 @@ void Rect::get_segment_set(bool CW, vector<Vector2D>& my_point_set,
   }
 }
 
+// distant from a point to edge
 void dis_point_edge(double &d, int &contact_vertex, int &contact_edge, 
                     const double *X, const double *Y, int size,
                     int im, double LY) {

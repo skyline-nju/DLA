@@ -99,6 +99,7 @@ void run(vector<Rect>& cluster, int nPar, Cell<Rect> & cell, Ran * myran,
          ofstream &fout) {
   cluster.push_back(Rect(0, 0, 0, 0));
   cell.update(&cluster[0]);
+  cluster[0].output(fout);
   cout << "initialized" << endl;
   while (cluster.size() < nPar) {
     Rect p0(cluster.size());

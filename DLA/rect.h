@@ -149,6 +149,7 @@ void Rect::tilt(const std::vector<Rect>& cluster, const Cell<Rect> & cell,
     Vec2<double> e1;
     Vec2<double> e2;
     if (contact_status.vertex_edge) {
+      // new rod's vertex contacts with old rod's edge
       get_mov_dir(iv, e1);
       cluster[neighbor].get_mov_dir((ie + 1) % 4, e2);
       contact_point = vertex[iv];
@@ -158,17 +159,30 @@ void Rect::tilt(const std::vector<Rect>& cluster, const Cell<Rect> & cell,
       double angle0 = acos(cos_angle);
       bool flag_blocked;
       if (iv == 0 || iv == 2) {
-        double d_theta = angle0 - tilting_angle;
-        rotate_around(cluster, cell, neighbor, contact_point, d_theta, flag_blocked);
+        if (tilting_angle < 0) {
+          double d_theta = angle0 + tilting_angle;
+          rotate_around(cluster, cell, neighbor, contact_point, d_theta, flag_blocked);
+        } else {
+          rotate_around(cluster, cell, neighbor, contact_point, angle0, flag_blocked);
+          if (!flag_blocked) {
+            contact_point = cluster[neighbor].vertex[(ie + 1) % 4];
+            rotate_around(cluster, cell, neighbor, contact_point, tilting_angle, flag_blocked);
+          }
+        }
       } else {
-        double d_theta = angle0 - 0.5 * PI;
-        rotate_around(cluster, cell, neighbor, contact_point, d_theta, flag_blocked);
-        if (!flag_blocked) {
-          contact_point = cluster[neighbor].vertex[ie];
-          rotate_around(cluster, cell, neighbor, contact_point, -tilting_angle, flag_blocked);
+        if (tilting_angle < 0) {
+          rotate_around(cluster, cell, neighbor, contact_point, angle0 - 0.5 * PI, flag_blocked);
+          if (!flag_blocked) {
+            contact_point = cluster[neighbor].vertex[ie];
+            rotate_around(cluster, cell, neighbor, contact_point, tilting_angle, flag_blocked);
+          }
+        } else {
+          double d_theta = tilting_angle - (0.5 * PI - angle0);
+          rotate_around(cluster, cell, neighbor, contact_point, d_theta, flag_blocked);
         }
       }
     } else {
+      // new rod's edge contacts with old rod's vertex
       cluster[neighbor].get_mov_dir(iv, e1);
       get_mov_dir((ie + 1) % 4, e2);
       contact_point = cluster[neighbor].vertex[iv];
@@ -178,18 +192,31 @@ void Rect::tilt(const std::vector<Rect>& cluster, const Cell<Rect> & cell,
       double angle0 = acos(cos_angle);
       bool flag_blocked;
       if (iv == 0 || iv == 2) {
-        rotate_around(cluster, cell, neighbor, contact_point, -angle0, flag_blocked);
-        if (!flag_blocked) {
-          contact_point = vertex[(ie+1) % 4];
-          rotate_around(cluster, cell, neighbor, contact_point, -tilting_angle, flag_blocked);
+        if (tilting_angle < 0) {
+          rotate_around(cluster, cell, neighbor, contact_point, -angle0, flag_blocked);
+          if (!flag_blocked) {
+            contact_point = vertex[(ie+1) % 4];
+            rotate_around(cluster, cell, neighbor, contact_point, tilting_angle, flag_blocked);
+          }
+        } else {
+          double dtheta = tilting_angle - angle0;
+          rotate_around(cluster, cell, neighbor, contact_point, dtheta, flag_blocked);
         }
-
       } else {
-        double d_theta = 0.5 * PI - angle0 - tilting_angle;
-        rotate_around(cluster, cell, neighbor, contact_point, d_theta, flag_blocked);
+        if (tilting_angle < 0) {
+          double d_theta = 0.5 * PI - angle0 + tilting_angle;
+          rotate_around(cluster, cell, neighbor, contact_point, d_theta, flag_blocked);
+        } else {
+          rotate_around(cluster, cell, neighbor, contact_point, 0.5 * PI - angle0, flag_blocked);
+          if (!flag_blocked) {
+            contact_point = vertex[ie];
+            rotate_around(cluster, cell, neighbor, contact_point, tilting_angle, flag_blocked);
+          }
+        }
       }
     }
   }
 }
+
 
 #endif
